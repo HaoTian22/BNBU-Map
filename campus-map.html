@@ -21,7 +21,7 @@
     }
     
     .search-box {
-      width: 100%;
+      /* width: 100%; */
       padding: 12px 15px;
       font-size: 14px;
       border: none;
@@ -117,6 +117,28 @@
       box-shadow: 0 1px 2px rgba(0,0,0,0.3);
     }
     
+    .layer-control-content {
+      display: block;
+    }
+    
+    .layer-toggle-btn {
+      display: none;
+      width: 100%;
+      padding: 8px;
+      background: #2563EB;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      margin-bottom: 10px;
+      font-family: Arial, sans-serif;
+    }
+    
+    .layer-toggle-btn:active {
+      background: #1d4ed8;
+    }
+    
     /* 移动端适配 */
     @media (max-width: 768px) {
       .search-container {
@@ -125,17 +147,29 @@
         left: 10px;
         right: 10px;
       }
-      
+
       .layer-control {
         top: auto;
-        bottom: 50px;
+        bottom: 10px;
         right: 10px;
-        max-height: 50vh;
-        max-width: calc(100vw - 20px);
+        left: 10px;
+        max-height: 60vh;
+        max-width: none;
+        padding: 10px;
+        transition: transform 0.3s ease, opacity 0.3s ease;
+      }
+      
+      .layer-control.collapsed .layer-control-content {
+        display: none;
+      }
+      
+      .layer-toggle-btn {
+        display: block;
       }
       
       .layer-control h3 {
         font-size: 13px;
+        margin: 0 0 8px 0;
       }
       
       .layer-control label {
@@ -160,9 +194,13 @@
 </div>
 
 <!-- 图层控制面板 -->
-<div class="layer-control">
-  <h3>Categories / 类别</h3>
-  <label>
+<div class="layer-control collapsed">
+  <button class="layer-toggle-btn" id="layer-toggle">
+    <span id="toggle-text">📍 Show Filters / 显示筛选</span>
+  </button>
+  <div class="layer-control-content">
+    <h3>Categories / 类别</h3>
+    <label>
     <input type="checkbox" id="category-dormitory" checked>
     <span class="color-indicator" style="background: #60A5FA;"></span>
     <span>Dormitory / 宿舍楼</span>
@@ -237,6 +275,7 @@
     <span class="color-indicator" style="background: #6B7280;"></span>
     <span>Other / 其他</span>
   </label>
+  </div>
 </div>
 
 <script>
@@ -489,6 +528,24 @@
           searchResults.classList.remove('show');
         }
       });
+      
+      // 移动端图层控制面板展开/收起
+      const layerControl = document.querySelector('.layer-control');
+      const layerToggle = document.getElementById('layer-toggle');
+      const toggleText = document.getElementById('toggle-text');
+      
+      if (layerToggle) {
+        layerToggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          layerControl.classList.toggle('collapsed');
+          
+          if (layerControl.classList.contains('collapsed')) {
+            toggleText.textContent = '📍 Show Filters / 显示筛选';
+          } else {
+            toggleText.textContent = '✖ Hide Filters / 隐藏筛选';
+          }
+        });
+      }
       
       // 设置复选框事件监听
       Object.keys(categoryColors).forEach(category => {
