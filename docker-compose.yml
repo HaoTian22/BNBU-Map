@@ -1,0 +1,13 @@
+
+services:
+  tileserver:
+    image: maptiler/tileserver-gl
+    ports:
+      - "8080:8080"
+    volumes:
+      - "/home/u0_a244/TileServer-GL/data:/data"
+      - "/home/u0_a244/TileServer-GL/styles:/styles"
+      - "/home/u0_a244/TileServer-GL/config.json:/config.json"
+      - "/home/u0_a244/TileServer-GL/fonts:/fonts"
+    command: ["--config", "/config.json"]
+#-"./test data:/data"

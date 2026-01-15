@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>OSM 校园地图</title>
+  <link href="https://unpkg.com/maplibre-gl@3.6.0/dist/maplibre-gl.css" rel="stylesheet" />
+  <script src="https://unpkg.com/maplibre-gl@3.6.0/dist/maplibre-gl.js"></script>
+  <style>
+    body, html { margin: 0; height: 100%; }
+    #map { width: 100%; height: 100%; }
+    
+    /* 搜索栏样式 */
+    .search-container {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      z-index: 1000;
+      width: 300px;
+      max-width: calc(100vw - 250px);
+    }
+    
+    .search-box {
+      width: 100%;
+      padding: 12px 15px;
+      font-size: 14px;
+      border: none;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      font-family: Arial, sans-serif;
+      outline: none;
+    }
+    
+    .search-results {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      margin-top: 5px;
+      max-height: 300px;
+      overflow-y: auto;
+      display: none;
+    }
+    
+    .search-results.show {
+      display: block;
+    }
+    
+    .search-result-item {
+      padding: 10px 15px;
+      cursor: pointer;
+      border-bottom: 1px solid #eee;
+      font-size: 13px;
+      font-family: Arial, sans-serif;
+    }
+    
+    .search-result-item:last-child {
+      border-bottom: none;
+    }
+    
+    .search-result-item:hover {
+      background: #f5f5f5;
+    }
+    
+    .search-result-name {
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 3px;
+    }
+    
+    .search-result-category {
+      font-size: 12px;
+      color: #666;
+    }
+    
+    /* 图层控制面板样式 */
+    .layer-control {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: white;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      max-height: 80vh;
+      overflow-y: auto;
+      z-index: 1000;
+      font-family: Arial, sans-serif;
+      min-width: 220px;
+    }
+    
+    .layer-control h3 {
+      margin: 0 0 10px 0;
+      font-size: 14px;
+      font-weight: bold;
+      color: #333;
+    }
+    
+    .layer-control label {
+      display: flex;
+      align-items: center;
+      margin: 8px 0;
+      cursor: pointer;
+      font-size: 13px;
+    }
+    
+    .layer-control input[type="checkbox"] {
+      margin-right: 8px;
+      cursor: pointer;
+    }
+    
+    .layer-control .color-indicator {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      margin-right: 8px;
+      border: 2px solid white;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+    }
+    
+    /* 移动端适配 */
+    @media (max-width: 768px) {
+      .search-container {
+        width: calc(100vw - 20px);
+        max-width: none;
+        left: 10px;
+        right: 10px;
+      }
+      
+      .layer-control {
+        top: auto;
+        bottom: 50px;
+        right: 10px;
+        max-height: 50vh;
+        max-width: calc(100vw - 20px);
+      }
+      
+      .layer-control h3 {
+        font-size: 13px;
+      }
+      
+      .layer-control label {
+        font-size: 12px;
+        margin: 6px 0;
+      }
+      
+      .layer-control .color-indicator {
+        width: 14px;
+        height: 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+<div id="map"></div>
+
+<!-- 搜索栏 -->
+<div class="search-container">
+  <input type="text" class="search-box" id="search-input" placeholder="Search / 搜索名称或类别...">
+  <div class="search-results" id="search-results"></div>
+</div>
+
+<!-- 图层控制面板 -->
+<div class="layer-control">
+  <h3>Categories / 类别</h3>
+  <label>
+    <input type="checkbox" id="category-dormitory" checked>
+    <span class="color-indicator" style="background: #60A5FA;"></span>
+    <span>Dormitory / 宿舍楼</span>
+  </label>
+  <label>
+    <input type="checkbox" id="category-university" checked>
+    <span class="color-indicator" style="background: #2563EB;"></span>
+    <span>Academic / 教学楼</span>
+  </label>
+  <label>
+    <input type="checkbox" id="category-building_other" checked>
+    <span class="color-indicator" style="background: #94A3B8;"></span>
+    <span>Other Building / 其他建筑</span>
+  </label>
+  <label>
+    <input type="checkbox" id="category-restaurant" checked>
+    <span class="color-indicator" style="background: #EF4444;"></span>
+    <span>Restaurant / 餐厅</span>
+  </label>
+  <label>
+    <input type="checkbox" id="category-cafe" checked>
+    <span class="color-indicator" style="background: #F87171;"></span>
+    <span>Cafe / 咖啡厅</span>
+  </label>
+  <label>
+    <input type="checkbox" id="category-food_court" checked>
+    <span class="color-indicator" style="background: #DC2626;"></span>
+    <span>Food Court / 食堂</span>
+  </label>
+  <label>
+    <input type="checkbox" id="category-fast_food" checked>
+    <span class="color-indicator" style="background: #FCA5A5;"></span>
+    <span>Fast Food / 快餐</span>
+  </label>
+  <label>
+    <input type="checkbox" id="category-shop" checked>
+    <span class="color-indicator" style="background: #F59E0B;"></span>
+    <span>Shop / 商店</span>
+  </label>
+  <label>
+    <input type="checkbox" id="category-office" checked>
+    <span class="color-indicator" style="background: #8B5CF6;"></span>
+    <span>Office / 办公室</span>
+  </label>
+  <label>
+    <input type="checkbox" id="category-parking" checked>
+    <span class="color-indicator" style="background: #059669;"></span>
+    <span>Parking / 停车</span>
+  </label>
+  <label>
+    <input type="checkbox" id="category-amenity" checked>
+    <span class="color-indicator" style="background: #10B981;"></span>
+    <span>Amenity / 设施</span>
+  </label>
+  <label>
+    <input type="checkbox" id="category-healthcare" checked>
+    <span class="color-indicator" style="background: #EC4899;"></span>
+    <span>Healthcare / 医疗</span>
+  </label>
+  <label>
+    <input type="checkbox" id="category-tourism" checked>
+    <span class="color-indicator" style="background: #14B8A6;"></span>
+    <span>Tourism / 旅游</span>
+  </label>
+  <label>
+    <input type="checkbox" id="category-leisure" checked>
+    <span class="color-indicator" style="background: #F97316;"></span>
+    <span>Leisure / 休闲</span>
+  </label>
+  <label>
+    <input type="checkbox" id="category-default" checked>
+    <span class="color-indicator" style="background: #6B7280;"></span>
+    <span>Other / 其他</span>
+  </label>
+</div>
+
+<script>
+  const map = new maplibregl.Map({
+    container: 'map',
+    style: 'https://vps.haotian22.top:8081/styles/osm-liberty/style.json',
+    center: [113.514982, 22.354065], // 修改为数据中心点
+    zoom: 17 // 修改为数据支持的缩放级别
+  });
+
+  // 分类颜色配置
+  const categoryColors = {
+    // 建筑物
+    dormitory: { color: '#60A5FA', label: 'Dormitory / 宿舍楼' },
+    university: { color: '#2563EB', label: 'Academic Building / 教学楼' },
+    building_other: { color: '#94A3B8', label: 'Other Building / 其他建筑' },
+    
+    // 餐饮
+    restaurant: { color: '#EF4444', label: 'Restaurant / 餐厅' },
+    cafe: { color: '#F87171', label: 'Cafe / 咖啡厅' },
+    food_court: { color: '#DC2626', label: 'Food Court / 食堂' },
+    fast_food: { color: '#FCA5A5', label: 'Fast Food / 快餐' },
+    
+    // 商店
+    shop: { color: '#F59E0B', label: 'Shop / 商店' },
+    
+    // 办公室
+    office: { color: '#8B5CF6', label: 'Office / 办公室' },
+    
+    // 设施服务
+    amenity: { color: '#10B981', label: 'Amenity / 设施' },
+    parking: { color: '#059669', label: 'Parking / 停车' },
+    
+    // 医疗
+    healthcare: { color: '#EC4899', label: 'Healthcare / 医疗' },
+    
+    // 旅游文化
+    tourism: { color: '#14B8A6', label: 'Tourism / 旅游' },
+    
+    // 休闲娱乐
+    leisure: { color: '#F97316', label: 'Leisure / 休闲' },
+    
+    // 默认
+    default: { color: '#6B7280', label: 'POI / 地点' }
+  };
+
+  // 存储所有标记点
+  const markers = [];
+  const markerData = []; // 存储标记点的详细数据用于搜索
+
+  // 根据属性确定类别和颜色
+  function getCategoryInfo(props) {
+    // 建筑物分类
+    if (props.building === 'dormitory') {
+      return categoryColors.dormitory;
+    }
+    if (props.building === 'university') {
+      return categoryColors.university;
+    }
+    if (props.building && props.building !== 'yes') {
+      return categoryColors.building_other;
+    }
+    
+    // 餐饮分类
+    if (props.amenity === 'restaurant') return categoryColors.restaurant;
+    if (props.amenity === 'cafe') return categoryColors.cafe;
+    if (props.amenity === 'food_court') return categoryColors.food_court;
+    if (props.amenity === 'fast_food') return categoryColors.fast_food;
+    
+    // 商店
+    if (props.shop) return categoryColors.shop;
+    
+    // 办公室
+    if (props.office) return categoryColors.office;
+    
+    // 停车
+    if (props.amenity && (props.amenity.includes('parking') || props.amenity === 'bicycle_parking')) {
+      return categoryColors.parking;
+    }
+    
+    // 医疗
+    if (props.healthcare || props.amenity === 'doctors') return categoryColors.healthcare;
+    
+    // 旅游
+    if (props.tourism) return categoryColors.tourism;
+    
+    // 休闲
+    if (props.leisure) return categoryColors.leisure;
+    
+    // 其他设施
+    if (props.amenity) return categoryColors.amenity;
+    
+    // 默认
+    return categoryColors.default;
+  }
+
+  // 从本地 GeoJSON 文件读取数据
+  fetch("export.geojson")
+    .then(res => res.json())
+    .then(geojson => {
+      geojson.features.forEach(feature => {
+        const coords = feature.geometry.coordinates;
+        let lon, lat;
+
+        // 处理不同的几何类型
+        if (feature.geometry.type === 'Point') {
+          [lon, lat] = coords;
+        } else if (feature.geometry.type === 'Polygon' || feature.geometry.type === 'LineString') {
+          // 计算中心点
+          const allCoords = feature.geometry.type === 'Polygon' ? coords[0] : coords;
+          const center = allCoords.reduce((acc, coord) => {
+            acc[0] += coord[0];
+            acc[1] += coord[1];
+            return acc;
+          }, [0, 0]);
+          lon = center[0] / allCoords.length;
+          lat = center[1] / allCoords.length;
+        } else {
+          return; // 跳过其他几何类型
+        }
+
+        const props = feature.properties;
+        
+        // 处理名称：英文/中文格式
+        let displayName = "未命名";
+        const nameEn = props?.['name:en'];
+        const nameZh = props?.['name:zh'] || props?.name;
+        
+        if (nameEn && nameZh) {
+          displayName = `${nameEn} <br> ${nameZh}`;
+        } else if (nameEn) {
+          displayName = nameEn;
+        } else if (nameZh) {
+          displayName = nameZh;
+        }
+        
+        const categoryInfo = getCategoryInfo(props);
+
+        // 构建弹窗内容
+        let popupContent = `<div style="font-family: Arial, sans-serif;">
+          <h3 style="margin: 0 0 8px 0; color: ${categoryInfo.color};">${displayName}</h3>
+          <p style="margin: 4px 0; color: #666;"> ${categoryInfo.label}</p>`;
+        
+        // 添加其他有用信息
+        if (props.amenity) popupContent += `<p style="margin: 4px 0; color: #666;"><strong>Amenity / 设施:</strong> ${props.amenity}</p>`;
+        if (props.building && props.building !== 'yes') popupContent += `<p style="margin: 4px 0; color: #666;"><strong>Building / 建筑:</strong> ${props.building}</p>`;
+        if (props.shop) popupContent += `<p style="margin: 4px 0; color: #666;"><strong>Shop / 商店:</strong> ${props.shop}</p>`;
+        if (props.cuisine) popupContent += `<p style="margin: 4px 0; color: #666;"><strong>Cuisine / 菜系:</strong> ${props.cuisine}</p>`;
+        if (props.opening_hours) popupContent += `<p style="margin: 4px 0; color: #666;"><strong>Opening Hours / 营业时间:</strong> ${props.opening_hours}</p>`;
+        
+        popupContent += '</div>';
+
+        const marker = new maplibregl.Marker({
+          color: categoryInfo.color
+        })
+          .setLngLat([lon, lat])
+          .setPopup(new maplibregl.Popup().setHTML(popupContent))
+          .addTo(map);
+        
+        // 获取类别键名
+        const categoryKey = Object.keys(categoryColors).find(key => 
+          categoryColors[key].color === categoryInfo.color && 
+          categoryColors[key].label === categoryInfo.label
+        );
+        
+        // 存储标记点及其类别
+        markers.push({
+          marker: marker,
+          category: categoryKey || 'default'
+        });
+        
+        // 存储用于搜索的数据
+        markerData.push({
+          marker: marker,
+          category: categoryKey || 'default',
+          name: displayName.replace('<br>', ' '),
+          nameEn: nameEn || '',
+          nameZh: nameZh || '',
+          categoryLabel: categoryInfo.label,
+          lngLat: [lon, lat],
+          props: props
+        });
+      });
+      
+      // 搜索功能
+      const searchInput = document.getElementById('search-input');
+      const searchResults = document.getElementById('search-results');
+      
+      searchInput.addEventListener('input', function() {
+        const query = this.value.toLowerCase().trim();
+        
+        if (query.length === 0) {
+          searchResults.classList.remove('show');
+          searchResults.innerHTML = '';
+          return;
+        }
+        
+        // 搜索匹配项
+        const matches = markerData.filter(item => {
+          return item.nameEn.toLowerCase().includes(query) ||
+                 item.nameZh.toLowerCase().includes(query) ||
+                 item.categoryLabel.toLowerCase().includes(query) ||
+                 item.props.amenity?.toLowerCase().includes(query) ||
+                 item.props.building?.toLowerCase().includes(query) ||
+                 item.props.shop?.toLowerCase().includes(query);
+        }).slice(0, 10); // 最多显示10条结果
+        
+        if (matches.length > 0) {
+          searchResults.innerHTML = matches.map(item => `
+            <div class="search-result-item" data-index="${markerData.indexOf(item)}">
+              <div class="search-result-name">${item.name || '未命名'}</div>
+              <div class="search-result-category">${item.categoryLabel}</div>
+            </div>
+          `).join('');
+          searchResults.classList.add('show');
+        } else {
+          searchResults.innerHTML = '<div class="search-result-item">No results / 无结果</div>';
+          searchResults.classList.add('show');
+        }
+      });
+      
+      // 点击搜索结果
+      searchResults.addEventListener('click', function(e) {
+        const item = e.target.closest('.search-result-item');
+        if (item && item.dataset.index) {
+          const data = markerData[parseInt(item.dataset.index)];
+          
+          // 定位到标记点
+          map.flyTo({
+            center: data.lngLat,
+            zoom: 19,
+            duration: 1000
+          });
+          
+          // 打开弹窗
+          setTimeout(() => {
+            data.marker.togglePopup();
+          }, 1000);
+          
+          // 清空搜索
+          searchInput.value = '';
+          searchResults.classList.remove('show');
+          searchResults.innerHTML = '';
+        }
+      });
+      
+      // 点击地图其他地方关闭搜索结果
+      document.addEventListener('click', function(e) {
+        if (!e.target.closest('.search-container')) {
+          searchResults.classList.remove('show');
+        }
+      });
+      
+      // 设置复选框事件监听
+      Object.keys(categoryColors).forEach(category => {
+        const checkbox = document.getElementById(`category-${category}`);
+        if (checkbox) {
+          checkbox.addEventListener('change', function() {
+            const isVisible = this.checked;
+            markers.forEach(item => {
+              if (item.category === category) {
+                const element = item.marker.getElement();
+                element.style.display = isVisible ? '' : 'none';
+              }
+            });
+          });
+        }
+      });
+    })
+    .catch(err => {
+      console.error('加载 GeoJSON 文件失败:', err);
+      alert('无法加载 export.geojson 文件,请确保文件与 HTML 在同一目录下');
+    });
+</script>
+</body>
+</html>
