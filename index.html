@@ -6,6 +6,7 @@
   <title>OSM 校园地图</title>
   <link href="https://unpkg.com/maplibre-gl@3.6.0/dist/maplibre-gl.css" rel="stylesheet" />
   <script src="https://unpkg.com/maplibre-gl@3.6.0/dist/maplibre-gl.js"></script>
+  <script src="https://unpkg.com/pinyin-pro@3.19.6/dist/index.js"></script>
   <style>
     body, html { margin: 0; height: 100%; }
     #map { width: 100%; height: 100%; }
@@ -325,6 +326,18 @@
   // 存储所有标记点
   const markers = [];
   const markerData = []; // 存储标记点的详细数据用于搜索
+  
+  // 使用 pinyin-pro 库进行拼音转换
+  function getPinyin(text) {
+    if (!text) return '';
+    try {
+      // 使用 pinyin-pro 的 pinyin 函数，去除声调，返回连续的拼音
+      return window.pinyinPro.pinyin(text, { toneType: 'none', type: 'array' }).join('').toLowerCase();
+    } catch (e) {
+      console.warn('拼音转换失败:', e);
+      return text.toLowerCase();
+    }
+  }
 
   // 根据属性确定类别和颜色
   function getCategoryInfo(props) {
@@ -426,6 +439,11 @@
         if (props.cuisine) popupContent += `<p style="margin: 4px 0; color: #666;"><strong>Cuisine / 菜系:</strong> ${props.cuisine}</p>`;
         if (props.opening_hours) popupContent += `<p style="margin: 4px 0; color: #666;"><strong>Opening Hours / 营业时间:</strong> ${props.opening_hours}</p>`;
         
+        // 添加更多专有属性
+        if (props['level:ref']) popupContent += `<p style="margin: 4px 0; color: #666;"><strong>Floor / 楼层:</strong> ${props['level:ref']}</p>`;
+        if (props.phone) popupContent += `<p style="margin: 4px 0; color: #666;"><strong>Phone / 电话:</strong> ${props.phone}</p>`;
+        if (props.website) popupContent += `<p style="margin: 4px 0; color: #666;"><strong>Website / 网站:</strong> <a href="${props.website}" target="_blank" style="color: ${categoryInfo.color};">链接</a></p>`;
+        
         popupContent += '</div>';
 
         const marker = new maplibregl.Marker({
@@ -454,6 +472,9 @@
           name: displayName.replace('<br>', ' '),
           nameEn: nameEn || '',
           nameZh: nameZh || '',
+          namePinyin: getPinyin(nameZh || ''),
+          shortName: props.short_name || '',
+          shortNamePinyin: getPinyin(props.short_name || ''),
           categoryLabel: categoryInfo.label,
           lngLat: [lon, lat],
           props: props
@@ -477,6 +498,9 @@
         const matches = markerData.filter(item => {
           return item.nameEn.toLowerCase().includes(query) ||
                  item.nameZh.toLowerCase().includes(query) ||
+                 item.namePinyin.includes(query) ||
+                 item.shortName.toLowerCase().includes(query) ||
+                 item.shortNamePinyin.includes(query) ||
                  item.categoryLabel.toLowerCase().includes(query) ||
                  item.props.amenity?.toLowerCase().includes(query) ||
                  item.props.building?.toLowerCase().includes(query) ||
