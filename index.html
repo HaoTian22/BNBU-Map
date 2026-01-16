@@ -277,73 +277,8 @@
       <button class="filter-btn" id="unselect-all">Unselect All / 全不选</button>
     </div>
     
-    <div class="category-item selected" data-group="buildings">
-      <div class="color-indicators">
-        <span class="color-indicator" style="background: #60A5FA;"></span>
-        <span class="color-indicator" style="background: #2563EB;"></span>
-        <span class="color-indicator" style="background: #94A3B8;"></span>
-      </div>
-      <span>Buildings / 建筑</span>
-    </div>
-    
-    <div class="category-item selected" data-group="dining">
-      <div class="color-indicators">
-        <span class="color-indicator" style="background: #EF4444;"></span>
-        <span class="color-indicator" style="background: #F87171;"></span>
-        <span class="color-indicator" style="background: #DC2626;"></span>
-        <span class="color-indicator" style="background: #FCA5A5;"></span>
-      </div>
-      <span>Dining / 餐饮</span>
-    </div>
-    
-    <div class="category-item selected" data-group="shop">
-      <div class="color-indicators">
-        <span class="color-indicator" style="background: #F59E0B;"></span>
-      </div>
-      <span>Shop / 商店</span>
-    </div>
-    
-    <div class="category-item selected" data-group="office">
-      <div class="color-indicators">
-        <span class="color-indicator" style="background: #8B5CF6;"></span>
-      </div>
-      <span>Office / 办公室</span>
-    </div>
-    
-    <div class="category-item selected" data-group="facilities">
-      <div class="color-indicators">
-        <span class="color-indicator" style="background: #10B981;"></span>
-        <span class="color-indicator" style="background: #059669;"></span>
-      </div>
-      <span>Facilities / 设施</span>
-    </div>
-    
-    <div class="category-item selected" data-group="healthcare">
-      <div class="color-indicators">
-        <span class="color-indicator" style="background: #EC4899;"></span>
-      </div>
-      <span>Healthcare / 医疗</span>
-    </div>
-    
-    <div class="category-item selected" data-group="tourism">
-      <div class="color-indicators">
-        <span class="color-indicator" style="background: #14B8A6;"></span>
-      </div>
-      <span>Tourism / 旅游</span>
-    </div>
-    
-    <div class="category-item selected" data-group="leisure">
-      <div class="color-indicators">
-        <span class="color-indicator" style="background: #F97316;"></span>
-      </div>
-      <span>Leisure / 休闲</span>
-    </div>
-    
-    <div class="category-item selected" data-group="default">
-      <div class="color-indicators">
-        <span class="color-indicator" style="background: #6B7280;"></span>
-      </div>
-      <span>Other / 其他</span>
+    <div id="category-list">
+      <!-- 分类项将通过JavaScript动态生成 -->
     </div>
   </div>
   <div class="osm-attribution">
@@ -395,6 +330,83 @@
     // 默认
     default: { color: '#6B7280', label: 'POI / 地点' }
   };
+  
+  // 定义分组映射关系（集中配置）
+  const categoryGroups = {
+    buildings: {
+      categories: ['dormitory', 'university', 'building_other'],
+      label: 'Buildings / 建筑'
+    },
+    dining: {
+      categories: ['restaurant', 'cafe', 'food_court', 'fast_food'],
+      label: 'Dining / 餐饮'
+    },
+    shop: {
+      categories: ['shop'],
+      label: 'Shop / 商店'
+    },
+    office: {
+      categories: ['office'],
+      label: 'Office / 办公室'
+    },
+    facilities: {
+      categories: ['amenity', 'parking'],
+      label: 'Facilities / 设施'
+    },
+    healthcare: {
+      categories: ['healthcare'],
+      label: 'Healthcare / 医疗'
+    },
+    tourism: {
+      categories: ['tourism'],
+      label: 'Tourism / 旅游'
+    },
+    leisure: {
+      categories: ['leisure'],
+      label: 'Leisure / 休闲'
+    },
+    default: {
+      categories: ['default'],
+      label: 'Other / 其他'
+    }
+  };
+  
+  // 动态生成分类选项
+  function generateCategoryItems() {
+    const categoryList = document.getElementById('category-list');
+    
+    Object.keys(categoryGroups).forEach(groupKey => {
+      const group = categoryGroups[groupKey];
+      const categoryItem = document.createElement('div');
+      categoryItem.className = 'category-item selected';
+      categoryItem.dataset.group = groupKey;
+      
+      // 创建颜色指示器容器
+      const colorIndicators = document.createElement('div');
+      colorIndicators.className = 'color-indicators';
+      
+      // 添加每个分类的颜色指示器
+      group.categories.forEach(catKey => {
+        if (categoryColors[catKey]) {
+          const indicator = document.createElement('span');
+          indicator.className = 'color-indicator';
+          indicator.style.background = categoryColors[catKey].color;
+          colorIndicators.appendChild(indicator);
+        }
+      });
+      
+      // 创建标签
+      const label = document.createElement('span');
+      label.textContent = group.label;
+      
+      categoryItem.appendChild(colorIndicators);
+      categoryItem.appendChild(label);
+      categoryList.appendChild(categoryItem);
+    });
+  }
+  
+  // 页面加载时生成分类项
+  generateCategoryItems();
 
   // 存储所有标记点
   const markers = [];
@@ -646,19 +658,6 @@
         });
       }
       
-      // 定义分组映射关系
-      const categoryGroups = {
-        buildings: ['dormitory', 'university', 'building_other'],
-        dining: ['restaurant', 'cafe', 'food_court', 'fast_food'],
-        shop: ['shop'],
-        office: ['office'],
-        facilities: ['amenity', 'parking'],
-        healthcare: ['healthcare'],
-        tourism: ['tourism'],
-        leisure: ['leisure'],
-        default: ['default']
-      };
-      
       // 存储每个分组的选中状态
       const groupStates = {};
       Object.keys(categoryGroups).forEach(group => {
@@ -669,7 +668,7 @@
       function updateMarkerVisibility() {
         markers.forEach(item => {
           const group = Object.keys(categoryGroups).find(g => 
-            categoryGroups[g].includes(item.category)
+            categoryGroups[g].categories.includes(item.category)
           );
           const isVisible = group && groupStates[group];
           const element = item.marker.getElement();
