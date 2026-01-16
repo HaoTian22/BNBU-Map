@@ -96,24 +96,66 @@
       color: #333;
     }
     
-    .layer-control label {
+    .filter-buttons {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    
+    .filter-btn {
+      flex: 1;
+      padding: 6px 10px;
+      font-size: 11px;
+      background: #f3f4f6;
+      color: #4b5563;
+      border: 1px solid #d1d5db;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: Arial, sans-serif;
+    }
+    
+    .filter-btn:hover {
+      background: #e5e7eb;
+      border-color: #9ca3af;
+    }
+    
+    .filter-btn:active {
+      background: #d1d5db;
+    }
+    
+    .category-item {
       display: flex;
       align-items: center;
-      margin: 8px 0;
+      padding: 10px 12px;
+      margin: 6px 0;
       cursor: pointer;
       font-size: 13px;
+      border-radius: 6px;
+      transition: all 0.2s;
+      background: #f9fafb;
+      border: 2px solid transparent;
     }
     
-    .layer-control input[type="checkbox"] {
-      margin-right: 8px;
-      cursor: pointer;
+    .category-item:hover {
+      background: #f3f4f6;
     }
     
-    .layer-control .color-indicator {
-      width: 16px;
-      height: 16px;
+    .category-item.selected {
+      background: #eff6ff;
+      border-color: #3b82f6;
+    }
+    
+    .color-indicators {
+      display: flex;
+      gap: 4px;
+      margin-right: 10px;
+    }
+    
+    .color-indicator {
+      width: 14px;
+      height: 14px;
       border-radius: 50%;
-      margin-right: 8px;
       border: 2px solid white;
       box-shadow: 0 1px 2px rgba(0,0,0,0.3);
     }
@@ -191,14 +233,20 @@
         margin: 0 0 8px 0;
       }
       
-      .layer-control label {
+      .category-item {
         font-size: 12px;
-        margin: 6px 0;
+        padding: 8px 10px;
+        margin: 4px 0;
       }
       
-      .layer-control .color-indicator {
-        width: 14px;
-        height: 14px;
+      .color-indicator {
+        width: 12px;
+        height: 12px;
+      }
+      
+      .filter-btn {
+        font-size: 10px;
+        padding: 5px 8px;
       }
       
       .osm-attribution {
@@ -223,81 +271,80 @@
   </button>
   <div class="layer-control-content">
     <h3>Categories / 类别</h3>
-    <label>
-    <input type="checkbox" id="category-dormitory" checked>
-    <span class="color-indicator" style="background: #60A5FA;"></span>
-    <span>Dormitory / 宿舍楼</span>
-  </label>
-  <label>
-    <input type="checkbox" id="category-university" checked>
-    <span class="color-indicator" style="background: #2563EB;"></span>
-    <span>Academic / 教学楼</span>
-  </label>
-  <label>
-    <input type="checkbox" id="category-building_other" checked>
-    <span class="color-indicator" style="background: #94A3B8;"></span>
-    <span>Other Building / 其他建筑</span>
-  </label>
-  <label>
-    <input type="checkbox" id="category-restaurant" checked>
-    <span class="color-indicator" style="background: #EF4444;"></span>
-    <span>Restaurant / 餐厅</span>
-  </label>
-  <label>
-    <input type="checkbox" id="category-cafe" checked>
-    <span class="color-indicator" style="background: #F87171;"></span>
-    <span>Cafe / 咖啡厅</span>
-  </label>
-  <label>
-    <input type="checkbox" id="category-food_court" checked>
-    <span class="color-indicator" style="background: #DC2626;"></span>
-    <span>Food Court / 食堂</span>
-  </label>
-  <label>
-    <input type="checkbox" id="category-fast_food" checked>
-    <span class="color-indicator" style="background: #FCA5A5;"></span>
-    <span>Fast Food / 快餐</span>
-  </label>
-  <label>
-    <input type="checkbox" id="category-shop" checked>
-    <span class="color-indicator" style="background: #F59E0B;"></span>
-    <span>Shop / 商店</span>
-  </label>
-  <label>
-    <input type="checkbox" id="category-office" checked>
-    <span class="color-indicator" style="background: #8B5CF6;"></span>
-    <span>Office / 办公室</span>
-  </label>
-  <label>
-    <input type="checkbox" id="category-parking" checked>
-    <span class="color-indicator" style="background: #059669;"></span>
-    <span>Parking / 停车</span>
-  </label>
-  <label>
-    <input type="checkbox" id="category-amenity" checked>
-    <span class="color-indicator" style="background: #10B981;"></span>
-    <span>Amenity / 设施</span>
-  </label>
-  <label>
-    <input type="checkbox" id="category-healthcare" checked>
-    <span class="color-indicator" style="background: #EC4899;"></span>
-    <span>Healthcare / 医疗</span>
-  </label>
-  <label>
-    <input type="checkbox" id="category-tourism" checked>
-    <span class="color-indicator" style="background: #14B8A6;"></span>
-    <span>Tourism / 旅游</span>
-  </label>
-  <label>
-    <input type="checkbox" id="category-leisure" checked>
-    <span class="color-indicator" style="background: #F97316;"></span>
-    <span>Leisure / 休闲</span>
-  </label>
-  <label>
-    <input type="checkbox" id="category-default" checked>
-    <span class="color-indicator" style="background: #6B7280;"></span>
-    <span>Other / 其他</span>
-  </label>
+    
+    <div class="filter-buttons">
+      <button class="filter-btn" id="select-all">Select All / 全选</button>
+      <button class="filter-btn" id="unselect-all">Unselect All / 全不选</button>
+    </div>
+    
+    <div class="category-item selected" data-group="buildings">
+      <div class="color-indicators">
+        <span class="color-indicator" style="background: #60A5FA;"></span>
+        <span class="color-indicator" style="background: #2563EB;"></span>
+        <span class="color-indicator" style="background: #94A3B8;"></span>
+      </div>
+      <span>Buildings / 建筑</span>
+    </div>
+    
+    <div class="category-item selected" data-group="dining">
+      <div class="color-indicators">
+        <span class="color-indicator" style="background: #EF4444;"></span>
+        <span class="color-indicator" style="background: #F87171;"></span>
+        <span class="color-indicator" style="background: #DC2626;"></span>
+        <span class="color-indicator" style="background: #FCA5A5;"></span>
+      </div>
+      <span>Dining / 餐饮</span>
+    </div>
+    
+    <div class="category-item selected" data-group="shop">
+      <div class="color-indicators">
+        <span class="color-indicator" style="background: #F59E0B;"></span>
+      </div>
+      <span>Shop / 商店</span>
+    </div>
+    
+    <div class="category-item selected" data-group="office">
+      <div class="color-indicators">
+        <span class="color-indicator" style="background: #8B5CF6;"></span>
+      </div>
+      <span>Office / 办公室</span>
+    </div>
+    
+    <div class="category-item selected" data-group="facilities">
+      <div class="color-indicators">
+        <span class="color-indicator" style="background: #10B981;"></span>
+        <span class="color-indicator" style="background: #059669;"></span>
+      </div>
+      <span>Facilities / 设施</span>
+    </div>
+    
+    <div class="category-item selected" data-group="healthcare">
+      <div class="color-indicators">
+        <span class="color-indicator" style="background: #EC4899;"></span>
+      </div>
+      <span>Healthcare / 医疗</span>
+    </div>
+    
+    <div class="category-item selected" data-group="tourism">
+      <div class="color-indicators">
+        <span class="color-indicator" style="background: #14B8A6;"></span>
+      </div>
+      <span>Tourism / 旅游</span>
+    </div>
+    
+    <div class="category-item selected" data-group="leisure">
+      <div class="color-indicators">
+        <span class="color-indicator" style="background: #F97316;"></span>
+      </div>
+      <span>Leisure / 休闲</span>
+    </div>
+    
+    <div class="category-item selected" data-group="default">
+      <div class="color-indicators">
+        <span class="color-indicator" style="background: #6B7280;"></span>
+      </div>
+      <span>Other / 其他</span>
+    </div>
   </div>
   <div class="osm-attribution">
     © <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors<br>
@@ -597,20 +644,67 @@
         });
       }
       
-      // 设置复选框事件监听
-      Object.keys(categoryColors).forEach(category => {
-        const checkbox = document.getElementById(`category-${category}`);
-        if (checkbox) {
-          checkbox.addEventListener('change', function() {
-            const isVisible = this.checked;
-            markers.forEach(item => {
-              if (item.category === category) {
-                const element = item.marker.getElement();
-                element.style.display = isVisible ? '' : 'none';
-              }
-            });
-          });
-        }
+      // 定义分组映射关系
+      const categoryGroups = {
+        buildings: ['dormitory', 'university', 'building_other'],
+        dining: ['restaurant', 'cafe', 'food_court', 'fast_food'],
+        shop: ['shop'],
+        office: ['office'],
+        facilities: ['amenity', 'parking'],
+        healthcare: ['healthcare'],
+        tourism: ['tourism'],
+        leisure: ['leisure'],
+        default: ['default']
+      };
+      
+      // 存储每个分组的选中状态
+      const groupStates = {};
+      Object.keys(categoryGroups).forEach(group => {
+        groupStates[group] = true; // 初始都是选中状态
+      });
+      
+      // 更新标记点可见性
+      function updateMarkerVisibility() {
+        markers.forEach(item => {
+          const group = Object.keys(categoryGroups).find(g => 
+            categoryGroups[g].includes(item.category)
+          );
+          const isVisible = group && groupStates[group];
+          const element = item.marker.getElement();
+          element.style.display = isVisible ? '' : 'none';
+        });
+      }
+      
+      // 点击分类项切换选中状态
+      document.querySelectorAll('.category-item').forEach(item => {
+        item.addEventListener('click', function() {
+          const group = this.dataset.group;
+          groupStates[group] = !groupStates[group];
+          this.classList.toggle('selected');
+          updateMarkerVisibility();
+        });
+      });
+      
+      // Select All 按钮
+      document.getElementById('select-all').addEventListener('click', function() {
+        Object.keys(groupStates).forEach(group => {
+          groupStates[group] = true;
+        });
+        document.querySelectorAll('.category-item').forEach(item => {
+          item.classList.add('selected');
+        });
+        updateMarkerVisibility();
+      });
+      
+      // Unselect All 按钮
+      document.getElementById('unselect-all').addEventListener('click', function() {
+        Object.keys(groupStates).forEach(group => {
+          groupStates[group] = false;
+        });
+        document.querySelectorAll('.category-item').forEach(item => {
+          item.classList.remove('selected');
+        });
+        updateMarkerVisibility();
       });
     })
     .catch(err => {

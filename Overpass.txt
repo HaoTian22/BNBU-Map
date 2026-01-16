@@ -1,0 +1,24 @@
+/* 定义输出格式为 JSON，并设置超时时间 */
+[out:json][timeout:25];
+
+/* 
+   获取 relation 18704403 
+   并将其转换为搜索区域 (map_to_area)，存入变量 .searchArea 
+*/
+rel(18704403);
+map_to_area -> .searchArea;
+
+/* 在该区域内进行联合查询 */
+(
+  /* 查找有 amenity 且有 name 的元素 */
+  nwr["amenity"](area.searchArea);
+  
+  /* 查找有 office 且有 name 的元素 */
+  nwr["office"](area.searchArea);
+  
+  /* 查找有 building 且有 name 的元素 */
+  nwr["building"]["name"](area.searchArea);
+);
+
+/* 输出结果，包含几何坐标 */
+out center;
