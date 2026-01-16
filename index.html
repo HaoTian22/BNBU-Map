@@ -591,7 +591,12 @@
                  item.categoryLabel.toLowerCase().includes(query) ||
                  item.props.amenity?.toLowerCase().includes(query) ||
                  item.props.building?.toLowerCase().includes(query) ||
-                 item.props.shop?.toLowerCase().includes(query);
+                 item.props.shop?.toLowerCase().includes(query) ||
+                 item.props.emergency?.toLowerCase().includes(query) ||
+                 item.props.office?.toLowerCase().includes(query) ||
+                 item.props.tourism?.toLowerCase().includes(query) ||
+                 item.props.leisure?.toLowerCase().includes(query) ||
+                 item.props.healthcare?.toLowerCase().includes(query);
         }).slice(0, 10); // 最多显示10条结果
         
         if (matches.length > 0) {
