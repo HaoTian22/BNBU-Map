@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>OSM 校园地图</title>
+  <title>BNBU 校园地图</title>
   <link href="https://unpkg.com/maplibre-gl@3.6.0/dist/maplibre-gl.css" rel="stylesheet" />
   <script src="https://unpkg.com/maplibre-gl@3.6.0/dist/maplibre-gl.js"></script>
   <script src="https://unpkg.com/pinyin-pro@3.19.6/dist/index.js"></script>
@@ -140,6 +140,24 @@
       background: #1d4ed8;
     }
     
+    .osm-attribution {
+      display: none;
+      font-size: 10px;
+      color: #999;
+      text-align: center;
+      margin-top: 8px;
+      line-height: 1.4;
+    }
+    
+    .osm-attribution a {
+      color: #2563EB;
+      text-decoration: none;
+    }
+    
+    .osm-attribution a:hover {
+      text-decoration: underline;
+    }
+    
     /* 移动端适配 */
     @media (max-width: 768px) {
       .search-container {
@@ -181,6 +199,10 @@
       .layer-control .color-indicator {
         width: 14px;
         height: 14px;
+      }
+      
+      .osm-attribution {
+        display: block;
       }
     }
   </style>
@@ -277,12 +299,16 @@
     <span>Other / 其他</span>
   </label>
   </div>
+  <div class="osm-attribution">
+    © <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors<br>
+    Data available under ODbL
+  </div>
 </div>
 
 <script>
   const map = new maplibregl.Map({
     container: 'map',
-    style: 'https://vps.haotian22.top:8081/styles/osm-liberty/style.json',
+    style: 'https://maptiles.haotian22.top/styles/osm-liberty/style.json',
     center: [113.514982, 22.354065], // 修改为数据中心点
     zoom: 17 // 修改为数据支持的缩放级别
   });
