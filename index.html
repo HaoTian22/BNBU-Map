@@ -443,7 +443,7 @@
     }
     
     // 医疗
-    if (props.healthcare || props.amenity === 'doctors') return categoryColors.healthcare;
+    if (props.healthcare || props.amenity === 'doctors' || props.emergency === 'defibrillator') return categoryColors.healthcare;
     
     // 旅游
     if (props.tourism) return categoryColors.tourism;
@@ -514,6 +514,8 @@
         
         // 添加更多专有属性
         if (props['level:ref']) popupContent += `<p style="margin: 4px 0; color: #666;"><strong>Floor / 楼层:</strong> ${props['level:ref']}</p>`;
+        if (props.emergency) popupContent += `<p style="margin: 4px 0; color: #666;"><strong>Emergency / 应急设施:</strong> ${props.emergency}</p>`;
+        if (props['defibrillator:location']) popupContent += `<p style="margin: 4px 0; color: #666;"><strong>Location / 位置:</strong> ${props['defibrillator:location']}</p>`;
         if (props.phone) popupContent += `<p style="margin: 4px 0; color: #666;"><strong>Phone / 电话:</strong> ${props.phone}</p>`;
         if (props.website) popupContent += `<p style="margin: 4px 0; color: #666;"><strong>Website / 网站:</strong> <a href="${props.website}" target="_blank" style="color: ${categoryInfo.color};">链接</a></p>`;
         

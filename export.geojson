@@ -2,7 +2,7 @@
   "type": "FeatureCollection",
   "generator": "overpass-turbo",
   "copyright": "The data included in this document is from www.openstreetmap.org. The data is made available under ODbL.",
-  "timestamp": "2026-01-15T11:18:28Z",
+  "timestamp": "2026-01-16T02:00:43Z",
   "features": [
     {
       "type": "Feature",
@@ -1871,6 +1871,22 @@
     {
       "type": "Feature",
       "properties": {
+        "@id": "node/11671590280",
+        "emergency": "fire_hydrant",
+        "fire_hydrant:type": "pillar"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          113.5119108,
+          22.360342
+        ]
+      },
+      "id": "node/11671590280"
+    },
+    {
+      "type": "Feature",
+      "properties": {
         "@id": "node/11671590282",
         "name": "校园图文",
         "shop": "copyshop"
@@ -2614,6 +2630,152 @@
     {
       "type": "Feature",
       "properties": {
+        "@id": "node/12367730213",
+        "defibrillator:location": "食堂外走廊/Corridor outside the canteen",
+        "emergency": "defibrillator",
+        "level": "0",
+        "opening_hours": "24/7",
+        "operator": "北师香港浸会大学"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          113.5114268,
+          22.3625292
+        ]
+      },
+      "id": "node/12367730213"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/12378893090",
+        "emergency": "defibrillator",
+        "indoor": "no"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          113.5111189,
+          22.3604087
+        ]
+      },
+      "id": "node/12378893090"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/12378893091",
+        "emergency": "defibrillator",
+        "indoor": "no"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          113.5114086,
+          22.3604955
+        ]
+      },
+      "id": "node/12378893091"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/12378893092",
+        "defibrillator:location": "D4A男厕所旁边/Next to D4A men's room",
+        "emergency": "defibrillator",
+        "level": "0",
+        "opening_hours": "24/7",
+        "operator": "北师香港浸会大学"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          113.5106951,
+          22.3604632
+        ]
+      },
+      "id": "node/12378893092"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/12686095454",
+        "defibrillator:location": "瑞幸对面/Opposite Luckin",
+        "emergency": "defibrillator",
+        "level": "0",
+        "opening_hours": "24/7",
+        "operator": "北师香港浸会大学"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          113.5152081,
+          22.3524179
+        ]
+      },
+      "id": "node/12686095454"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/12686095455",
+        "defibrillator:location": "医务室左边/Next to the door of the doctor's office",
+        "emergency": "defibrillator",
+        "level": "0",
+        "opening_hours": "24/7",
+        "operator": "北师香港浸会大学"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          113.5139128,
+          22.3529119
+        ]
+      },
+      "id": "node/12686095455"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/12686095456",
+        "defibrillator:location": "D6男厕所旁边/Next to the D6 men's room",
+        "emergency": "defibrillator",
+        "level": "0",
+        "opening_hours": "24/7",
+        "operator": "北师香港浸会大学"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          113.510804,
+          22.3618921
+        ]
+      },
+      "id": "node/12686095456"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/12686095457",
+        "defibrillator:location": "2F楼梯旁边/Next to the stairs",
+        "emergency": "defibrillator",
+        "level": "1",
+        "opening_hours": "24/7",
+        "operator": "北师香港浸会大学"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          113.5155734,
+          22.3531361
+        ]
+      },
+      "id": "node/12686095457"
+    },
+    {
+      "type": "Feature",
+      "properties": {
         "@id": "node/12759013032",
         "level": "3",
         "level:ref": "4",
@@ -2654,6 +2816,22 @@
     {
       "type": "Feature",
       "properties": {
+        "@id": "node/12762188821",
+        "emergency": "fire_hydrant",
+        "fire_hydrant:type": "pillar"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          113.5145753,
+          22.3521309
+        ]
+      },
+      "id": "node/12762188821"
+    },
+    {
+      "type": "Feature",
+      "properties": {
         "@id": "node/12762188833",
         "amenity": "fire_station"
       },
@@ -2681,6 +2859,86 @@
         ]
       },
       "id": "node/12762188837"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/12790644290",
+        "access": "yes",
+        "defibrillator:location": "师生活动中心门口/Entrance of T4-SSAC",
+        "emergency": "defibrillator",
+        "indoor": "no",
+        "level": "1",
+        "opening_hours": "24/7",
+        "operator": "北师香港浸会大学"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          113.5169094,
+          22.353315
+        ]
+      },
+      "id": "node/12790644290"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/12816498287",
+        "defibrillator:location": "师生活动中心内/Inside T29-SSAC",
+        "emergency": "defibrillator",
+        "indoor": "yes",
+        "level": "0",
+        "opening_hours": "24/7",
+        "operator": "北师香港浸会大学"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          113.5133576,
+          22.3538529
+        ]
+      },
+      "id": "node/12816498287"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/12816498288",
+        "defibrillator:location": "会堂楼梯口/Stairs of University Hall",
+        "emergency": "defibrillator",
+        "indoor": "yes",
+        "level": "1",
+        "opening_hours": "24/7",
+        "operator": "北师香港浸会大学"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          113.5159366,
+          22.3512593
+        ]
+      },
+      "id": "node/12816498288"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/12816498289",
+        "defibrillator:location": "V24门口/Entrance of V24",
+        "emergency": "defibrillator",
+        "level": "0",
+        "opening_hours": "24/7",
+        "operator": "北师香港浸会大学"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          113.5132861,
+          22.3542012
+        ]
+      },
+      "id": "node/12816498289"
     },
     {
       "type": "Feature",
