@@ -212,6 +212,22 @@
     .osm-attribution a:hover {
       text-decoration: underline;
     }
+
+    .feedback-note {
+      font-size: 10px;
+      color: #999;
+      text-align: center;
+      margin-top: 5px;
+    }
+
+    .feedback-note a {
+      color: #2563EB;
+      text-decoration: none;
+    }
+    .feedback-note a:hover {
+      text-decoration: underline;
+    }
+
     
     /* 定位按钮样式 */
     .locate-button {
@@ -339,7 +355,7 @@
 <div class="layer-control collapsed">
   <div class="control-buttons">
     <button class="layer-toggle-btn" id="layer-toggle">
-      <span id="toggle-text">🔽 Filters / 筛选</span>
+      <span id="toggle-text">⚙ Filters / 筛选</span>
     </button>
     <button class="locate-button" id="locate-button">
       <span id="locate-text">📍 GPS</span>
@@ -358,9 +374,13 @@
     </div>
   </div>
   <div class="osm-attribution">
-    © <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors<br>
-    Data available under ODbL
+    © <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors | Data available under ODbL<br>
   </div>
+  <div class="feedback-note">
+    Feedback / 反馈: via
+    <a href="https://github.com/HaoTian22/BNBU-Map/issues" target="_blank">GitHub Issues</a>
+    or
+    <a href="mailto:hao_tian22@outlook.com">Email</a>
 </div>
 
 <script>
@@ -926,7 +946,7 @@
           layerControl.classList.toggle('collapsed');
           
           if (layerControl.classList.contains('collapsed')) {
-            toggleText.textContent = '🔽 Filters / 筛选';
+            toggleText.textContent = '⚙ Filters / 筛选';
           } else {
             toggleText.textContent = '✖ Collapse / 隐藏';
           }
@@ -937,10 +957,10 @@
       window.addEventListener('resize', function() {
         if (isMobile()) {
           layerControl.classList.add('collapsed');
-          toggleText.textContent = '🔽 Filters / 筛选';
+          toggleText.textContent = '⚙ Filters / 筛选';
         } else {
           layerControl.classList.remove('collapsed');
-          toggleText.textContent = '🔽 Filters / 筛选';
+          toggleText.textContent = '⚙ Filters / 筛选';
         }
       });
       
