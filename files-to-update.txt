@@ -18,4 +18,4 @@ update-from-github.sh
 update-from-github.bat
 
 # 更新文件列表配置（可选）
-# files-to-update.txt
+files-to-update.txt
