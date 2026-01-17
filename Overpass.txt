@@ -2,7 +2,7 @@
 [out:json][timeout:25];
 
 /* 
-   获取 relation 18704403 
+   获取学校mutipolygon relation 18704403 
    并将其转换为搜索区域 (map_to_area)，存入变量 .searchArea 
 */
 rel(18704403);
@@ -18,7 +18,14 @@ map_to_area -> .searchArea;
   
   /* 查找有 building 且有 name 的元素 */
   nwr["building"]["name"](area.searchArea);
+  
+  nwr["tourism"](area.searchArea);
+  
+  nwr["shop"](area.searchArea);
+  
+  nwr["emergency"](area.searchArea);
+  
 );
 
-/* 输出结果，包含几何坐标 */
+/* 输出结果，包含几何中心 */
 out center;
