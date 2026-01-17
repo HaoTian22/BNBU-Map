@@ -11,6 +11,9 @@ set "GITHUB_REPO=BNBU-Map"
 set "GITHUB_BRANCH=main"
 set "GITHUB_RAW_URL=https://raw.githubusercontent.com/%GITHUB_USER%/%GITHUB_REPO%/%GITHUB_BRANCH%"
 
+REM 配置文件
+set "CONFIG_FILE=files-to-update.txt"
+
 REM 添加时间戳
 for /f "tokens=1-4 delims=/ " %%a in ("%date%") do (
     set "DATE=%%a-%%b-%%c"
@@ -34,6 +37,26 @@ if %ERRORLEVEL% NEQ 0 (
     exit /b 1
 )
 
+REM 检查配置文件并读取文件列表
+if not exist "%CONFIG_FILE%" (
+    echo [%TIMESTAMP%] 警告: 配置文件 %CONFIG_FILE% 不存在
+    echo [%TIMESTAMP%] 使用默认文件列表
+    set "FILES=index.html fetch-poi.sh fetch-poi.bat Overpass.txt update-from-github.sh update-from-github.bat"
+) else (
+    echo [%TIMESTAMP%] 从配置文件读取更新列表: %CONFIG_FILE%
+    REM 读取文件列表（忽略注释和空行）
+    set "FILES="
+    for /f "usebackq tokens=* delims=" %%a in ("%CONFIG_FILE%") do (
+        set "LINE=%%a"
+        REM 跳过注释行和空行
+        if not "!LINE:~0,1!"=="#" if not "!LINE!"=="" (
+            set "FILES=!FILES! %%a"
+        )
+    )
+    echo [%TIMESTAMP%] 已读取文件列表
+    echo.
+)
+
 REM 创建备份目录
 for /f "tokens=1-6 delims=/:. " %%a in ("%date% %time%") do (
     set "BACKUP_DIR=backups\%%a%%b%%c_%%d%%e%%f"
@@ -44,9 +67,6 @@ REM 统计更新结果
 set "SUCCESS_COUNT=0"
 set "FAIL_COUNT=0"
 set "SKIP_COUNT=0"
-
-REM 需要更新的文件列表
-set "FILES=index.html fetch-poi.sh fetch-poi.bat Overpass.txt"
 
 REM 更新每个文件
 for %%F in (%FILES%) do (

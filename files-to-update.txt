@@ -1,0 +1,21 @@
+# GitHub 自动更新文件列表
+# 每行一个文件路径（相对于仓库根目录）
+# 以 # 开头的行为注释，会被忽略
+# 空行会被忽略
+
+# 主要页面
+index.html
+
+# POI 更新脚本
+fetch-poi.sh
+fetch-poi.bat
+
+# Overpass 查询配置
+Overpass.txt
+
+# GitHub 更新脚本（脚本会自动更新自己）
+update-from-github.sh
+update-from-github.bat
+
+# 更新文件列表配置（可选）
+# files-to-update.txt

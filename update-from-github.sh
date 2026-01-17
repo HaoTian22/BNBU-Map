@@ -9,13 +9,8 @@ GITHUB_REPO="BNBU-Map"
 GITHUB_BRANCH="main"
 GITHUB_RAW_URL="https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/${GITHUB_BRANCH}"
 
-# 需要更新的文件列表
-FILES_TO_UPDATE=(
-  "index.html"
-  "fetch-poi.sh"
-  "fetch-poi.bat"
-  "Overpass.txt"
-)
+# 配置文件
+CONFIG_FILE="files-to-update.txt"
 
 # 添加时间戳用于日志
 TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
@@ -24,6 +19,27 @@ echo "[$TIMESTAMP] 开始从 GitHub 更新文件..."
 echo "[$TIMESTAMP] 仓库: ${GITHUB_USER}/${GITHUB_REPO}"
 echo "[$TIMESTAMP] 分支: ${GITHUB_BRANCH}"
 echo ""
+
+# 检查配置文件是否存在
+if [ ! -f "$CONFIG_FILE" ]; then
+  echo "[$TIMESTAMP] 警告: 配置文件 $CONFIG_FILE 不存在"
+  echo "[$TIMESTAMP] 使用默认文件列表"
+  # 默认文件列表
+  FILES_TO_UPDATE=(
+    "index.html"
+    "fetch-poi.sh"
+    "fetch-poi.bat"
+    "Overpass.txt"
+    "update-from-github.sh"
+    "update-from-github.bat"
+  )
+else
+  echo "[$TIMESTAMP] 从配置文件读取更新列表: $CONFIG_FILE"
+  # 从配置文件读取，忽略注释和空行
+  mapfile -t FILES_TO_UPDATE < <(grep -v '^#' "$CONFIG_FILE" | grep -v '^[[:space:]]*$' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+  echo "[$TIMESTAMP] 找到 ${#FILES_TO_UPDATE[@]} 个文件需要检查"
+  echo ""
+fi
 
 # 创建备份目录
 BACKUP_DIR="backups/$(date '+%Y%m%d_%H%M%S')"
