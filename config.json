@@ -33,6 +33,10 @@
       "style": "osm_liberty.json",
       "serve_rendered": true
     },
+    "osm-liberty-basic": {
+      "style": "osm_liberty-basic.json",
+      "serve_rendered": true
+    },
     "remote": {
       "style": "https://demotiles.maplibre.org/style.json"
     }
@@ -40,6 +44,9 @@
   "data": {
     "openmaptiles": {
       "mbtiles": "BNBU.mbtiles"
+    },
+    "openmaptiles-full": {
+      "mbtiles": "BNBU-3D.mbtiles"
     }
   }
 }

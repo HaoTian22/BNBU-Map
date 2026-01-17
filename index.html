@@ -86,7 +86,7 @@
       overflow-y: auto;
       z-index: 1000;
       font-family: Arial, sans-serif;
-      min-width: 220px;
+      min-width: 250px;
     }
     
     .layer-control h3 {
@@ -164,8 +164,11 @@
       display: block;
     }
     
-    .layer-toggle-btn {
+    .layer-control.collapsed .layer-control-content {
       display: none;
+    }
+    
+    .layer-toggle-btn {
       width: 100%;
       padding: 8px;
       background: #2563EB;
@@ -174,12 +177,22 @@
       border-radius: 6px;
       font-size: 13px;
       cursor: pointer;
-      margin-bottom: 10px;
       font-family: Arial, sans-serif;
+      transition: background 0.2s;
+    }
+    
+    .layer-toggle-btn:hover {
+      background: #1d4ed8;
     }
     
     .layer-toggle-btn:active {
-      background: #1d4ed8;
+      background: #1e40af;
+    }
+    
+    .control-buttons {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 10px;
     }
     
     .osm-attribution {
@@ -198,6 +211,55 @@
     
     .osm-attribution a:hover {
       text-decoration: underline;
+    }
+    
+    /* 定位按钮样式 */
+    .locate-button {
+      flex: 1;
+      padding: 8px;
+      background: white;
+      color: #2563EB;
+      border: 1px solid #2563EB;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      font-family: Arial, sans-serif;
+      transition: all 0.2s;
+    }
+    
+    .locate-button:hover {
+      background: #eff6ff;
+    }
+    
+    .locate-button:active {
+      background: #dbeafe;
+    }
+    
+    .locate-button.active,
+    .locate-button.locating {
+      background: #2563EB;
+      color: white;
+    }
+    
+    .locate-button.active:hover {
+      background: #1d4ed8;
+    }
+    
+    .locate-button.active:active {
+      background: #1e40af;
+    }
+    
+    .locate-button.locating {
+      animation: pulse 1.5s infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% {
+        opacity: 1;
+      }
+      50% {
+        opacity: 0.5;
+      }
     }
     
     /* 移动端适配 */
@@ -225,7 +287,16 @@
       }
       
       .layer-toggle-btn {
-        display: block;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        padding: 12px;
+        font-size: 14px;
+      }
+      
+      .locate-button {
+        padding: 12px;
+        font-size: 14px;
       }
       
       .layer-control h3 {
@@ -266,9 +337,14 @@
 
 <!-- 图层控制面板 -->
 <div class="layer-control collapsed">
-  <button class="layer-toggle-btn" id="layer-toggle">
-    <span id="toggle-text">📍 Show Filters / 显示筛选</span>
-  </button>
+  <div class="control-buttons">
+    <button class="layer-toggle-btn" id="layer-toggle">
+      <span id="toggle-text">🔽 Filters / 筛选</span>
+    </button>
+    <button class="locate-button" id="locate-button">
+      <span id="locate-text">📍 GPS</span>
+    </button>
+  </div>
   <div class="layer-control-content">
     <h3>Categories / 类别</h3>
     
@@ -293,6 +369,182 @@
     style: 'https://maptiles.haotian22.top/styles/osm-liberty/style.json',
     center: [113.514982, 22.354065], // 修改为数据中心点
     zoom: 17 // 修改为数据支持的缩放级别
+  });
+  
+  // 定位功能
+  let userLocationMarker = null;
+  let watchId = null;
+  let isTracking = false;
+  let isFirstLocation = true; // 标记是否是首次定位
+  
+  const locateButton = document.getElementById('locate-button');
+  
+  function updateUserLocation(position) {
+    const { longitude, latitude } = position.coords;
+    
+    // 如果已存在用户位置标记，则更新位置
+    if (userLocationMarker) {
+      userLocationMarker.setLngLat([longitude, latitude]);
+    } else {
+      // 创建用户位置标记（带方向的箭头指针）
+      const el = document.createElement('div');
+      el.id = 'user-location-marker';
+      el.innerHTML = `
+        <svg width="40" height="40" viewBox="0 0 40 40" style="display: block;">
+          <!-- 外圈光晕 -->
+          <circle cx="20" cy="20" r="18" fill="rgba(37, 99, 235, 0.15)" />
+          <!-- 内圈 -->
+          <circle cx="20" cy="20" r="12" fill="#2563EB" stroke="white" stroke-width="3" />
+          <!-- 方向箭头 -->
+          <path d="M 20 8 L 26 16 L 22 16 L 22 22 L 18 22 L 18 16 L 14 16 Z" 
+                fill="white" stroke="white" stroke-width="0.5" />
+        </svg>
+      `;
+      el.style.width = '40px';
+      el.style.height = '40px';
+      el.style.cursor = 'pointer';
+      el.style.transition = 'transform 0.3s ease-out';
+      
+      userLocationMarker = new maplibregl.Marker({ 
+        element: el,
+        rotationAlignment: 'map',
+        pitchAlignment: 'map'
+      })
+        .setLngLat([longitude, latitude])
+        .addTo(map);
+    }
+    
+    // 只在首次定位时移动地图到用户位置
+    if (isFirstLocation) {
+      map.flyTo({
+        center: [longitude, latitude],
+        zoom: 18,
+        duration: 1000
+      });
+      isFirstLocation = false;
+    }
+    
+    locateButton.classList.remove('locating');
+    locateButton.classList.add('active');
+  }
+  
+  function handleLocationError(error) {
+    console.error('定位错误:', error);
+    locateButton.classList.remove('locating', 'active');
+    
+    let errorMessage = 'Unable to get location / 无法获取位置';
+    switch(error.code) {
+      case error.PERMISSION_DENIED:
+        errorMessage = 'Location permission denied / 位置权限被拒绝';
+        break;
+      case error.POSITION_UNAVAILABLE:
+        errorMessage = 'Location unavailable / 位置信息不可用';
+        break;
+      case error.TIMEOUT:
+        errorMessage = 'Location request timeout / 定位请求超时';
+        break;
+    }
+    
+    alert(errorMessage);
+    
+    if (watchId !== null) {
+      navigator.geolocation.clearWatch(watchId);
+      watchId = null;
+    }
+    isTracking = false;
+  }
+  
+  // 设备方向处理
+  let currentHeading = 0;
+  
+  function updateMarkerRotation(heading) {
+    const marker = document.getElementById('user-location-marker');
+    if (marker && heading !== null) {
+      currentHeading = heading;
+      marker.style.transform = `rotate(${heading}deg)`;
+    }
+  }
+  
+  function handleOrientation(event) {
+    let heading = null;
+    
+    // 处理不同的方向数据源
+    if (event.webkitCompassHeading !== undefined) {
+      // iOS Safari
+      heading = event.webkitCompassHeading;
+    } else if (event.alpha !== null) {
+      // Android Chrome and others
+      heading = 360 - event.alpha;
+    }
+    
+    if (heading !== null) {
+      updateMarkerRotation(heading);
+    }
+  }
+  
+  function startOrientationTracking() {
+    // 请求设备方向权限（iOS 13+需要）
+    if (typeof DeviceOrientationEvent !== 'undefined' && 
+        typeof DeviceOrientationEvent.requestPermission === 'function') {
+      DeviceOrientationEvent.requestPermission()
+        .then(permissionState => {
+          if (permissionState === 'granted') {
+            window.addEventListener('deviceorientation', handleOrientation, true);
+          }
+        })
+        .catch(console.error);
+    } else if (window.DeviceOrientationEvent) {
+      // 非iOS或旧版本iOS
+      window.addEventListener('deviceorientation', handleOrientation, true);
+    }
+  }
+  
+  function stopOrientationTracking() {
+    window.removeEventListener('deviceorientation', handleOrientation, true);
+  }
+  
+  locateButton.addEventListener('click', function() {
+    if (!navigator.geolocation) {
+      alert('Geolocation is not supported / 您的浏览器不支持定位功能');
+      return;
+    }
+    
+    if (isTracking) {
+      // 停止追踪
+      if (watchId !== null) {
+        navigator.geolocation.clearWatch(watchId);
+        watchId = null;
+      }
+      stopOrientationTracking();
+      isTracking = false;
+      isFirstLocation = true; // 重置首次定位标记
+      locateButton.classList.remove('active', 'locating');
+      
+      // 移除用户位置标记
+      if (userLocationMarker) {
+        userLocationMarker.remove();
+        userLocationMarker = null;
+      }
+    } else {
+      // 开始追踪
+      isTracking = true;
+      isFirstLocation = true; // 重置首次定位标记
+      locateButton.classList.add('locating');
+      
+      // 启动方向追踪
+      startOrientationTracking();
+      
+      // 持续追踪用户位置
+      watchId = navigator.geolocation.watchPosition(
+        updateUserLocation,
+        handleLocationError,
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0
+        }
+      );
+    }
   });
 
   // 分类颜色配置
@@ -645,10 +897,22 @@
         }
       });
       
-      // 移动端图层控制面板展开/收起
+      // 图层控制面板展开/收起
       const layerControl = document.querySelector('.layer-control');
       const layerToggle = document.getElementById('layer-toggle');
       const toggleText = document.getElementById('toggle-text');
+      
+      // 检测是否为移动端
+      function isMobile() {
+        return window.innerWidth <= 768;
+      }
+      
+      // 初始化面板状态
+      if (isMobile()) {
+        layerControl.classList.add('collapsed');
+      } else {
+        layerControl.classList.remove('collapsed');
+      }
       
       if (layerToggle) {
         layerToggle.addEventListener('click', function(e) {
@@ -656,12 +920,23 @@
           layerControl.classList.toggle('collapsed');
           
           if (layerControl.classList.contains('collapsed')) {
-            toggleText.textContent = '📍 Show Filters / 显示筛选';
+            toggleText.textContent = '🔽 Filters / 筛选';
           } else {
-            toggleText.textContent = '✖ Hide Filters / 隐藏筛选';
+            toggleText.textContent = '✖ Collapse / 隐藏';
           }
         });
       }
+      
+      // 窗口大小变化时重置状态
+      window.addEventListener('resize', function() {
+        if (isMobile()) {
+          layerControl.classList.add('collapsed');
+          toggleText.textContent = '🔽 Filters / 筛选';
+        } else {
+          layerControl.classList.remove('collapsed');
+          toggleText.textContent = '🔽 Filters / 筛选';
+        }
+      });
       
       // 存储每个分组的选中状态
       const groupStates = {};

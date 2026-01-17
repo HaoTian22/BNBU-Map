@@ -10,7 +10,7 @@
   "sources": {
     "openmaptiles": {
       "type": "vector",
-      "url": "mbtiles://{openmaptiles-full}",
+      "url": "mbtiles://{openmaptiles}",
       "attribution": "© OpenStreetMap contributors"
     },
     "natural_earth_shaded_relief": {
@@ -1357,21 +1357,7 @@
       "source-layer": "waterway",
       "filter": ["all", ["==", "$type", "LineString"]],
       "layout": {
-        "text-field": [
-          "case",
-          [
-            "all",
-            ["has", "name:latin"],
-            ["!=", ["get", "name"], ["get", "name:latin"]]
-          ],
-          [
-            "format",
-            ["get", "name"], {},
-            "\n", {},
-            ["get", "name:latin"], { "font-scale": 0.8 }
-          ],
-          ["get", "name"]
-        ],
+        "text-field": "{name}",
         "text-font": ["MiSans Semibold"],
         "text-max-width": 5,
         "text-size": 12,
@@ -1390,21 +1376,7 @@
       "source-layer": "water_name",
       "filter": ["==", "$type", "Point"],
       "layout": {
-        "text-field": [
-          "case",
-          [
-            "all",
-            ["has", "name:latin"],
-            ["!=", ["get", "name"], ["get", "name:latin"]]
-          ],
-          [
-            "format",
-            ["get", "name"], {},
-            "\n", {},
-            ["get", "name:latin"], { "font-scale": 0.8 }
-          ],
-          ["get", "name"]
-        ],
+        "text-field": "{name}",
         "text-font": ["MiSans Semibold"],
         "text-max-width": 5,
         "text-size": 12
@@ -1431,21 +1403,7 @@
           ["get", "class"]
         ],
         "text-anchor": "top",
-        "text-field": [
-          "case",
-          [
-            "all",
-            ["has", "name:latin"],
-            ["!=", ["get", "name"], ["get", "name:latin"]]
-          ],
-          [
-            "format",
-            ["get", "name"], {},
-            "\n", {},
-            ["get", "name:latin"], { "font-scale": 0.8 }
-          ],
-          ["get", "name"]
-        ],
+        "text-field": "{name}",
         "text-font": ["MiSans Semibold"],
         "text-max-width": 9,
         "text-offset": [0, 0.6],
@@ -1479,21 +1437,7 @@
           ["get", "class"]
         ],
         "text-anchor": "top",
-        "text-field": [
-          "case",
-          [
-            "all",
-            ["has", "name:latin"],
-            ["!=", ["get", "name"], ["get", "name:latin"]]
-          ],
-          [
-            "format",
-            ["get", "name"], {},
-            "\n", {},
-            ["get", "name:latin"], { "font-scale": 0.8 }
-          ],
-          ["get", "name"]
-        ],
+        "text-field": "{name}",
         "text-font": ["MiSans Semibold"],
         "text-max-width": 9,
         "text-offset": [0, 0.6],
@@ -1527,21 +1471,7 @@
           ["get", "class"]
         ],
         "text-anchor": "top",
-        "text-field": [
-          "case",
-          [
-            "all",
-            ["has", "name:latin"],
-            ["!=", ["get", "name"], ["get", "name:latin"]]
-          ],
-          [
-            "format",
-            ["get", "name"], {},
-            "\n", {},
-            ["get", "name:latin"], { "font-scale": 0.8 }
-          ],
-          ["get", "name"]
-        ],
+        "text-field": "{name}",
         "text-font": ["MiSans Semibold"],
         "text-max-width": 9,
         "text-offset": [0, 0.6],
@@ -1563,21 +1493,7 @@
       "layout": {
         "icon-image": "{class}",
         "text-anchor": "left",
-        "text-field": [
-          "case",
-          [
-            "all",
-            ["has", "name:latin"],
-            ["!=", ["get", "name"], ["get", "name:latin"]]
-          ],
-          [
-            "format",
-            ["get", "name"], {},
-            "\n", {},
-            ["get", "name:latin"], { "font-scale": 0.8 }
-          ],
-          ["get", "name"]
-        ],
+        "text-field": "{name}",
         "text-font": ["MiSans Semibold"],
         "text-max-width": 9,
         "text-offset": [0.9, 0],
@@ -1599,21 +1515,7 @@
       "layout": {
         "symbol-placement": "line",
         "text-anchor": "center",
-        "text-field": [
-          "case",
-          [
-            "all",
-            ["has", "name:latin"],
-            ["!=", ["get", "name"], ["get", "name:latin"]]
-          ],
-          [
-            "format",
-            ["get", "name"], {},
-            "\n", {},
-            ["get", "name:latin"], { "font-scale": 0.8 }
-          ],
-          ["get", "name"]
-        ],
+        "text-field": "{name}",
         "text-font": ["MiSans Semibold"],
         "text-offset": [0, 0.15],
         "text-size": {"base": 1, "stops": [[13, 12], [14, 13]]}
@@ -1663,21 +1565,7 @@
         ]
       ],
       "layout": {
-        "text-field": [
-          "case",
-          [
-            "all",
-            ["has", "name:latin"],
-            ["!=", ["get", "name"], ["get", "name:latin"]]
-          ],
-          [
-            "format",
-            ["get", "name"], {},
-            "\n", {},
-            ["get", "name:latin"], { "font-scale": 0.8 }
-          ],
-          ["get", "name"]
-        ],
+        "text-field": "{name}",
         "text-font": ["MiSans Semibold"],
         "text-letter-spacing": 0.1,
         "text-max-width": 9,
@@ -1697,21 +1585,7 @@
       "source-layer": "place",
       "filter": ["all", ["==", "class", "village"]],
       "layout": {
-        "text-field": [
-          "case",
-          [
-            "all",
-            ["has", "name:latin"],
-            ["!=", ["get", "name"], ["get", "name:latin"]]
-          ],
-          [
-            "format",
-            ["get", "name"], {},
-            "\n", {},
-            ["get", "name:latin"], { "font-scale": 0.8 }
-          ],
-          ["get", "name"]
-        ],
+        "text-field": "{name}",
         "text-font": ["MiSans Semibold"],
         "text-max-width": 8,
         "text-size": {"base": 1.2, "stops": [[10, 12], [15, 22]]}
@@ -1731,21 +1605,7 @@
       "layout": {
         "icon-image": {"base": 1, "stops": [[0, "dot_9"], [8, ""]]},
         "text-anchor": "bottom",
-        "text-field": [
-          "case",
-          [
-            "all",
-            ["has", "name:latin"],
-            ["!=", ["get", "name"], ["get", "name:latin"]]
-          ],
-          [
-            "format",
-            ["get", "name"], {},
-            "\n", {},
-            ["get", "name:latin"], { "font-scale": 0.8 }
-          ],
-          ["get", "name"]
-        ],
+        "text-field": "{name}",
         "text-font": ["MiSans Semibold"],
         "text-max-width": 8,
         "text-offset": [0, 0],
@@ -1767,21 +1627,7 @@
       "layout": {
         "icon-image": {"base": 1, "stops": [[0, "dot_9"], [8, ""]]},
         "text-anchor": "bottom",
-        "text-field": [
-          "case",
-          [
-            "all",
-            ["has", "name:latin"],
-            ["!=", ["get", "name"], ["get", "name:latin"]]
-          ],
-          [
-            "format",
-            ["get", "name"], {},
-            "\n", {},
-            ["get", "name:latin"], { "font-scale": 0.8 }
-          ],
-          ["get", "name"]
-        ],
+        "text-field": "{name}",
         "text-font": ["MiSans Semibold"],
         "text-max-width": 8,
         "text-offset": [0, 0],
@@ -1803,21 +1649,7 @@
       "maxzoom": 6,
       "filter": ["all", ["==", "class", "state"]],
       "layout": {
-        "text-field": [
-          "case",
-          [
-            "all",
-            ["has", "name:latin"],
-            ["!=", ["get", "name"], ["get", "name:latin"]]
-          ],
-          [
-            "format",
-            ["get", "name"], {},
-            "\n", {},
-            ["get", "name:latin"], { "font-scale": 0.8 }
-          ],
-          ["get", "name"]
-        ],
+        "text-field": "{name}",
         "text-font": ["MiSans Semibold"],
         "text-size": {"stops": [[4, 11], [6, 15]]},
         "text-transform": "uppercase"
@@ -1835,21 +1667,7 @@
       "source-layer": "place",
       "filter": ["all", [">=", "rank", 3], ["==", "class", "country"]],
       "layout": {
-        "text-field": [
-          "case",
-          [
-            "all",
-            ["has", "name:latin"],
-            ["!=", ["get", "name"], ["get", "name:latin"]]
-          ],
-          [
-            "format",
-            ["get", "name"], {},
-            "\n", {},
-            ["get", "name:latin"], { "font-scale": 0.8 }
-          ],
-          ["get", "name"]
-        ],
+        "text-field": "{name}",
         "text-font": ["MiSans Semibold"],
         "text-max-width": 6.25,
         "text-size": {"stops": [[3, 11], [7, 17]]},
@@ -1869,21 +1687,7 @@
       "source-layer": "place",
       "filter": ["all", ["==", "rank", 2], ["==", "class", "country"]],
       "layout": {
-        "text-field": [
-          "case",
-          [
-            "all",
-            ["has", "name:latin"],
-            ["!=", ["get", "name"], ["get", "name:latin"]]
-          ],
-          [
-            "format",
-            ["get", "name"], {},
-            "\n", {},
-            ["get", "name:latin"], { "font-scale": 0.8 }
-          ],
-          ["get", "name"]
-        ],
+        "text-field": "{name}",
         "text-font": ["MiSans Semibold"],
         "text-max-width": 6.25,
         "text-size": {"stops": [[2, 11], [5, 17]]},
@@ -1903,21 +1707,7 @@
       "source-layer": "place",
       "filter": ["all", ["==", "rank", 1], ["==", "class", "country"]],
       "layout": {
-        "text-field": [
-          "case",
-          [
-            "all",
-            ["has", "name:latin"],
-            ["!=", ["get", "name"], ["get", "name:latin"]]
-          ],
-          [
-            "format",
-            ["get", "name"], {},
-            "\n", {},
-            ["get", "name:latin"], { "font-scale": 0.8 }
-          ],
-          ["get", "name"]
-        ],
+        "text-field": "{name}",
         "text-font": ["MiSans Semibold"],
         "text-max-width": 6.25,
         "text-size": {"stops": [[1, 11], [4, 17]]},
@@ -1938,21 +1728,7 @@
       "maxzoom": 1,
       "filter": ["all", ["==", "class", "continent"]],
       "layout": {
-        "text-field": [
-          "case",
-          [
-            "all",
-            ["has", "name:latin"],
-            ["!=", ["get", "name"], ["get", "name:latin"]]
-          ],
-          [
-            "format",
-            ["get", "name"], {},
-            "\n", {},
-            ["get", "name:latin"], { "font-scale": 0.8 }
-          ],
-          ["get", "name"]
-        ],
+        "text-field": "{name}",
         "text-font": ["MiSans Semibold"],
         "text-size": 13,
         "text-transform": "uppercase",
