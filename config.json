@@ -7,7 +7,7 @@
       "mbtiles": "data"
     },
     "domains": [
-      "vps.haotian22.top:8081"
+      "maptiles.haotian22.top"
     ],
     "formatOptions": {
       "jpeg": {
