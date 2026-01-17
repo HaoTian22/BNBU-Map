@@ -1,0 +1,114 @@
+#!/bin/bash
+
+# 切换到脚本所在目录
+cd "$(dirname "$0")" || exit 1
+
+# GitHub 仓库信息
+GITHUB_USER="HaoTian22"
+GITHUB_REPO="BNBU-Map"
+GITHUB_BRANCH="main"
+GITHUB_RAW_URL="https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/${GITHUB_BRANCH}"
+
+# 需要更新的文件列表
+FILES_TO_UPDATE=(
+  "index.html"
+  "fetch-poi.sh"
+  "fetch-poi.bat"
+  "Overpass.txt"
+)
+
+# 添加时间戳用于日志
+TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
+
+echo "[$TIMESTAMP] 开始从 GitHub 更新文件..."
+echo "[$TIMESTAMP] 仓库: ${GITHUB_USER}/${GITHUB_REPO}"
+echo "[$TIMESTAMP] 分支: ${GITHUB_BRANCH}"
+echo ""
+
+# 创建备份目录
+BACKUP_DIR="backups/$(date '+%Y%m%d_%H%M%S')"
+mkdir -p "$BACKUP_DIR"
+
+# 统计更新结果
+SUCCESS_COUNT=0
+FAIL_COUNT=0
+SKIP_COUNT=0
+
+# 下载并更新每个文件
+for FILE in "${FILES_TO_UPDATE[@]}"; do
+  echo "[$TIMESTAMP] 处理文件: $FILE"
+  
+  # 检查本地文件是否存在
+  if [ -f "$FILE" ]; then
+    # 备份现有文件
+    cp "$FILE" "$BACKUP_DIR/$FILE"
+    echo "[$TIMESTAMP]   已备份到: $BACKUP_DIR/$FILE"
+  fi
+  
+  # 下载新文件到临时位置
+  TEMP_FILE="${FILE}.tmp"
+  if curl -f -s -S -L "${GITHUB_RAW_URL}/${FILE}" -o "$TEMP_FILE" --max-time 30; then
+    # 检查下载的文件是否为空
+    if [ -s "$TEMP_FILE" ]; then
+      # 如果本地文件存在，比较是否有变化
+      if [ -f "$FILE" ]; then
+        if cmp -s "$FILE" "$TEMP_FILE"; then
+          echo "[$TIMESTAMP]   ⊙ 文件无变化，跳过更新"
+          rm -f "$TEMP_FILE"
+          SKIP_COUNT=$((SKIP_COUNT + 1))
+        else
+          mv "$TEMP_FILE" "$FILE"
+          echo "[$TIMESTAMP]   ✓ 文件已更新"
+          SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
+          
+          # 如果是脚本文件，添加执行权限
+          if [[ "$FILE" == *.sh ]]; then
+            chmod +x "$FILE"
+            echo "[$TIMESTAMP]   ✓ 已添加执行权限"
+          fi
+        fi
+      else
+        # 本地文件不存在，直接保存
+        mv "$TEMP_FILE" "$FILE"
+        echo "[$TIMESTAMP]   ✓ 文件已创建"
+        SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
+        
+        # 如果是脚本文件，添加执行权限
+        if [[ "$FILE" == *.sh ]]; then
+          chmod +x "$FILE"
+          echo "[$TIMESTAMP]   ✓ 已添加执行权限"
+        fi
+      fi
+    else
+      echo "[$TIMESTAMP]   ✗ 下载的文件为空"
+      rm -f "$TEMP_FILE"
+      FAIL_COUNT=$((FAIL_COUNT + 1))
+    fi
+  else
+    echo "[$TIMESTAMP]   ✗ 下载失败"
+    rm -f "$TEMP_FILE"
+    FAIL_COUNT=$((FAIL_COUNT + 1))
+  fi
+  echo ""
+done
+
+# 显示更新摘要
+echo "[$TIMESTAMP] ================================"
+echo "[$TIMESTAMP] 更新完成！"
+echo "[$TIMESTAMP] 成功更新: $SUCCESS_COUNT 个文件"
+echo "[$TIMESTAMP] 跳过更新: $SKIP_COUNT 个文件（无变化）"
+echo "[$TIMESTAMP] 更新失败: $FAIL_COUNT 个文件"
+echo "[$TIMESTAMP] 备份位置: $BACKUP_DIR"
+echo "[$TIMESTAMP] ================================"
+
+# 如果有更新成功的文件，建议刷新网页
+if [ $SUCCESS_COUNT -gt 0 ]; then
+  echo "[$TIMESTAMP] 提示: 请刷新网页查看最新内容"
+fi
+
+# 返回适当的退出码
+if [ $FAIL_COUNT -gt 0 ]; then
+  exit 1
+else
+  exit 0
+fi
