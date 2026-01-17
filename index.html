@@ -749,32 +749,30 @@
     return categoryColors.default;
   }
 
-  // 从本地 GeoJSON 文件读取数据
-  fetch("export.geojson")
+  // 从本地 POI.json 文件读取数据
+  fetch("POI.json")
     .then(res => res.json())
-    .then(geojson => {
-      geojson.features.forEach(feature => {
-        const coords = feature.geometry.coordinates;
+    .then(data => {
+      data.elements.forEach(element => {
         let lon, lat;
 
-        // 处理不同的几何类型
-        if (feature.geometry.type === 'Point') {
-          [lon, lat] = coords;
-        } else if (feature.geometry.type === 'Polygon' || feature.geometry.type === 'LineString') {
-          // 计算中心点
-          const allCoords = feature.geometry.type === 'Polygon' ? coords[0] : coords;
-          const center = allCoords.reduce((acc, coord) => {
-            acc[0] += coord[0];
-            acc[1] += coord[1];
-            return acc;
-          }, [0, 0]);
-          lon = center[0] / allCoords.length;
-          lat = center[1] / allCoords.length;
+        // 处理不同的元素类型
+        if (element.type === 'node') {
+          lat = element.lat;
+          lon = element.lon;
+        } else if (element.type === 'way' || element.type === 'relation') {
+          // 使用中心点
+          if (element.center) {
+            lat = element.center.lat;
+            lon = element.center.lon;
+          } else {
+            return; // 跳过没有中心点的元素
+          }
         } else {
-          return; // 跳过其他几何类型
+          return; // 跳过其他类型
         }
 
-        const props = feature.properties;
+        const props = element.tags || {};
         
         // 处理名称：英文/中文格式
         let displayName = "未命名";
@@ -1027,8 +1025,8 @@
       });
     })
     .catch(err => {
-      console.error('加载 GeoJSON 文件失败:', err);
-      alert('无法加载 export.geojson 文件,请确保文件与 HTML 在同一目录下');
+      console.error('加载 POI.json 文件失败:', err);
+      alert('无法加载 POI.json 文件,请确保文件与 HTML 在同一目录下');
     });
 </script>
 </body>
