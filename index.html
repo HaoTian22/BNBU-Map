@@ -796,6 +796,17 @@
           <h3 style="margin: 0 0 8px 0; color: ${categoryInfo.color};">${displayName}</h3>
           <p style="margin: 4px 0; color: #666;"> ${categoryInfo.label}</p>`;
         
+        // 添加位置信息（addr:unit 和 addr:door）
+        const addrUnit = props['addr:unit'];
+        const addrDoor = props['addr:door'];
+        if (addrUnit && addrDoor) {
+          popupContent += `<p style="margin: 4px 0; color: #666;"><strong>Location / 位置:</strong> ${addrUnit}-${addrDoor}</p>`;
+        } else if (addrUnit) {
+          popupContent += `<p style="margin: 4px 0; color: #666;"><strong>Location / 位置:</strong> ${addrUnit}</p>`;
+        } else if (addrDoor) {
+          popupContent += `<p style="margin: 4px 0; color: #666;"><strong>Location / 位置:</strong> ${addrDoor}</p>`;
+        }
+        
         // 添加其他有用信息
         if (props.amenity) popupContent += `<p style="margin: 4px 0; color: #666;"><strong>Amenity / 设施:</strong> ${props.amenity}</p>`;
         if (props.building && props.building !== 'yes') popupContent += `<p style="margin: 4px 0; color: #666;"><strong>Building / 建筑:</strong> ${props.building}</p>`;
