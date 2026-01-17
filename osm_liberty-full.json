@@ -1361,14 +1361,14 @@
           "case",
           [
             "all",
-            ["has", "name:en"],
-            ["!=", ["get", "name"], ["get", "name:en"]]
+            ["has", "name:latin"],
+            ["!=", ["get", "name"], ["get", "name:latin"]]
           ],
           [
-            "concat",
-            ["get", "name"],
-            "\n",
-            ["get", "name:en"]
+            "format",
+            ["get", "name"], {},
+            "\n", {},
+            ["get", "name:latin"], { "font-scale": 0.8 }
           ],
           ["get", "name"]
         ],
@@ -1394,14 +1394,14 @@
           "case",
           [
             "all",
-            ["has", "name:en"],
-            ["!=", ["get", "name"], ["get", "name:en"]]
+            ["has", "name:latin"],
+            ["!=", ["get", "name"], ["get", "name:latin"]]
           ],
           [
-            "concat",
-            ["get", "name"],
-            "\n",
-            ["get", "name:en"]
+            "format",
+            ["get", "name"], {},
+            "\n", {},
+            ["get", "name:latin"], { "font-scale": 0.8 }
           ],
           ["get", "name"]
         ],
@@ -1435,14 +1435,14 @@
           "case",
           [
             "all",
-            ["has", "name:en"],
-            ["!=", ["get", "name"], ["get", "name:en"]]
+            ["has", "name:latin"],
+            ["!=", ["get", "name"], ["get", "name:latin"]]
           ],
           [
-            "concat",
-            ["get", "name"],
-            "\n",
-            ["get", "name:en"]
+            "format",
+            ["get", "name"], {},
+            "\n", {},
+            ["get", "name:latin"], { "font-scale": 0.8 }
           ],
           ["get", "name"]
         ],
@@ -1483,14 +1483,14 @@
           "case",
           [
             "all",
-            ["has", "name:en"],
-            ["!=", ["get", "name"], ["get", "name:en"]]
+            ["has", "name:latin"],
+            ["!=", ["get", "name"], ["get", "name:latin"]]
           ],
           [
-            "concat",
-            ["get", "name"],
-            "\n",
-            ["get", "name:en"]
+            "format",
+            ["get", "name"], {},
+            "\n", {},
+            ["get", "name:latin"], { "font-scale": 0.8 }
           ],
           ["get", "name"]
         ],
@@ -1531,14 +1531,14 @@
           "case",
           [
             "all",
-            ["has", "name:en"],
-            ["!=", ["get", "name"], ["get", "name:en"]]
+            ["has", "name:latin"],
+            ["!=", ["get", "name"], ["get", "name:latin"]]
           ],
           [
-            "concat",
-            ["get", "name"],
-            "\n",
-            ["get", "name:en"]
+            "format",
+            ["get", "name"], {},
+            "\n", {},
+            ["get", "name:latin"], { "font-scale": 0.8 }
           ],
           ["get", "name"]
         ],
@@ -1567,14 +1567,14 @@
           "case",
           [
             "all",
-            ["has", "name:en"],
-            ["!=", ["get", "name"], ["get", "name:en"]]
+            ["has", "name:latin"],
+            ["!=", ["get", "name"], ["get", "name:latin"]]
           ],
           [
-            "concat",
-            ["get", "name"],
-            "\n",
-            ["get", "name:en"]
+            "format",
+            ["get", "name"], {},
+            "\n", {},
+            ["get", "name:latin"], { "font-scale": 0.8 }
           ],
           ["get", "name"]
         ],
@@ -1603,14 +1603,14 @@
           "case",
           [
             "all",
-            ["has", "name:en"],
-            ["!=", ["get", "name"], ["get", "name:en"]]
+            ["has", "name:latin"],
+            ["!=", ["get", "name"], ["get", "name:latin"]]
           ],
           [
-            "concat",
-            ["get", "name"],
-            "\n",
-            ["get", "name:en"]
+            "format",
+            ["get", "name"], {},
+            "\n", {},
+            ["get", "name:latin"], { "font-scale": 0.8 }
           ],
           ["get", "name"]
         ],
@@ -1667,14 +1667,14 @@
           "case",
           [
             "all",
-            ["has", "name:en"],
-            ["!=", ["get", "name"], ["get", "name:en"]]
+            ["has", "name:latin"],
+            ["!=", ["get", "name"], ["get", "name:latin"]]
           ],
           [
-            "concat",
-            ["get", "name"],
-            "\n",
-            ["get", "name:en"]
+            "format",
+            ["get", "name"], {},
+            "\n", {},
+            ["get", "name:latin"], { "font-scale": 0.8 }
           ],
           ["get", "name"]
         ],
@@ -1701,14 +1701,14 @@
           "case",
           [
             "all",
-            ["has", "name:en"],
-            ["!=", ["get", "name"], ["get", "name:en"]]
+            ["has", "name:latin"],
+            ["!=", ["get", "name"], ["get", "name:latin"]]
           ],
           [
-            "concat",
-            ["get", "name"],
-            "\n",
-            ["get", "name:en"]
+            "format",
+            ["get", "name"], {},
+            "\n", {},
+            ["get", "name:latin"], { "font-scale": 0.8 }
           ],
           ["get", "name"]
         ],
@@ -1735,14 +1735,14 @@
           "case",
           [
             "all",
-            ["has", "name:en"],
-            ["!=", ["get", "name"], ["get", "name:en"]]
+            ["has", "name:latin"],
+            ["!=", ["get", "name"], ["get", "name:latin"]]
           ],
           [
-            "concat",
-            ["get", "name"],
-            "\n",
-            ["get", "name:en"]
+            "format",
+            ["get", "name"], {},
+            "\n", {},
+            ["get", "name:latin"], { "font-scale": 0.8 }
           ],
           ["get", "name"]
         ],
@@ -1771,14 +1771,14 @@
           "case",
           [
             "all",
-            ["has", "name:en"],
-            ["!=", ["get", "name"], ["get", "name:en"]]
+            ["has", "name:latin"],
+            ["!=", ["get", "name"], ["get", "name:latin"]]
           ],
           [
-            "concat",
-            ["get", "name"],
-            "\n",
-            ["get", "name:en"]
+            "format",
+            ["get", "name"], {},
+            "\n", {},
+            ["get", "name:latin"], { "font-scale": 0.8 }
           ],
           ["get", "name"]
         ],
@@ -1807,14 +1807,14 @@
           "case",
           [
             "all",
-            ["has", "name:en"],
-            ["!=", ["get", "name"], ["get", "name:en"]]
+            ["has", "name:latin"],
+            ["!=", ["get", "name"], ["get", "name:latin"]]
           ],
           [
-            "concat",
-            ["get", "name"],
-            "\n",
-            ["get", "name:en"]
+            "format",
+            ["get", "name"], {},
+            "\n", {},
+            ["get", "name:latin"], { "font-scale": 0.8 }
           ],
           ["get", "name"]
         ],
@@ -1839,17 +1839,17 @@
           "case",
           [
             "all",
-            ["has", "name:en"],
-            ["!=", ["get", "name"], ["get", "name:en"]]
+            ["has", "name:latin"],
+            ["!=", ["get", "name"], ["get", "name:latin"]]
           ],
           [
-            "concat",
-            ["get", "name"],
-            "\n",
-            ["get", "name:en"]
+            "format",
+            ["get", "name"], {},
+            "\n", {},
+            ["get", "name:latin"], { "font-scale": 0.8 }
           ],
           ["get", "name"]
-        ]
+        ],
         "text-font": ["MiSans Semibold"],
         "text-max-width": 6.25,
         "text-size": {"stops": [[3, 11], [7, 17]]},
@@ -1873,14 +1873,14 @@
           "case",
           [
             "all",
-            ["has", "name:en"],
-            ["!=", ["get", "name"], ["get", "name:en"]]
+            ["has", "name:latin"],
+            ["!=", ["get", "name"], ["get", "name:latin"]]
           ],
           [
-            "concat",
-            ["get", "name"],
-            "\n",
-            ["get", "name:en"]
+            "format",
+            ["get", "name"], {},
+            "\n", {},
+            ["get", "name:latin"], { "font-scale": 0.8 }
           ],
           ["get", "name"]
         ],
@@ -1907,14 +1907,14 @@
           "case",
           [
             "all",
-            ["has", "name:en"],
-            ["!=", ["get", "name"], ["get", "name:en"]]
+            ["has", "name:latin"],
+            ["!=", ["get", "name"], ["get", "name:latin"]]
           ],
           [
-            "concat",
-            ["get", "name"],
-            "\n",
-            ["get", "name:en"]
+            "format",
+            ["get", "name"], {},
+            "\n", {},
+            ["get", "name:latin"], { "font-scale": 0.8 }
           ],
           ["get", "name"]
         ],
@@ -1942,14 +1942,14 @@
           "case",
           [
             "all",
-            ["has", "name:en"],
-            ["!=", ["get", "name"], ["get", "name:en"]]
+            ["has", "name:latin"],
+            ["!=", ["get", "name"], ["get", "name:latin"]]
           ],
           [
-            "concat",
-            ["get", "name"],
-            "\n",
-            ["get", "name:en"]
+            "format",
+            ["get", "name"], {},
+            "\n", {},
+            ["get", "name:latin"], { "font-scale": 0.8 }
           ],
           ["get", "name"]
         ],
