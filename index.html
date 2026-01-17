@@ -376,17 +376,57 @@
   let watchId = null;
   let isTracking = false;
   let isFirstLocation = true; // 标记是否是首次定位
+  let lastPosition = null; // 保存上次位置用于对比
   
   const locateButton = document.getElementById('locate-button');
   
+  // 计算两点之间的距离（米）
+  function calculateDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371e3; // 地球半径（米）
+    const φ1 = lat1 * Math.PI / 180;
+    const φ2 = lat2 * Math.PI / 180;
+    const Δφ = (lat2 - lat1) * Math.PI / 180;
+    const Δλ = (lon2 - lon1) * Math.PI / 180;
+    
+    const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+              Math.cos(φ1) * Math.cos(φ2) *
+              Math.sin(Δλ/2) * Math.sin(Δλ/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    
+    return R * c;
+  }
+  
   function updateUserLocation(position) {
-    const { longitude, latitude } = position.coords;
+    const { longitude, latitude, accuracy } = position.coords;
+    
+    // 精度过滤：如果精度大于50米，则忽略此次更新（首次除外）
+    if (!isFirstLocation && accuracy > 50) {
+      console.log(`忽略低精度位置: ${accuracy}m`);
+      return;
+    }
+    
+    // 距离过滤：如果与上次位置距离小于5米，则忽略此次更新（首次除外）
+    if (lastPosition && !isFirstLocation) {
+      const distance = calculateDistance(
+        lastPosition.latitude,
+        lastPosition.longitude,
+        latitude,
+        longitude
+      );
+      
+      if (distance < 3) {
+        return;
+      }
+    }
+    
+    // 更新上次位置
+    lastPosition = { latitude, longitude };
     
     // 如果已存在用户位置标记，则更新位置
     if (userLocationMarker) {
       userLocationMarker.setLngLat([longitude, latitude]);
     } else {
-      // 创建用户位置标记（带方向的箭头指针）
+      // 创建用户位置标记（蓝色圆点）
       const el = document.createElement('div');
       el.id = 'user-location-marker';
       el.innerHTML = `
@@ -395,20 +435,15 @@
           <circle cx="20" cy="20" r="18" fill="rgba(37, 99, 235, 0.15)" />
           <!-- 内圈 -->
           <circle cx="20" cy="20" r="12" fill="#2563EB" stroke="white" stroke-width="3" />
-          <!-- 方向箭头 -->
-          <path d="M 20 8 L 26 16 L 22 16 L 22 22 L 18 22 L 18 16 L 14 16 Z" 
-                fill="white" stroke="white" stroke-width="0.5" />
         </svg>
       `;
       el.style.width = '40px';
       el.style.height = '40px';
       el.style.cursor = 'pointer';
-      el.style.transition = 'transform 0.3s ease-out';
       
       userLocationMarker = new maplibregl.Marker({ 
         element: el,
-        rotationAlignment: 'map',
-        pitchAlignment: 'map'
+        anchor: 'center'
       })
         .setLngLat([longitude, latitude])
         .addTo(map);
@@ -416,12 +451,24 @@
     
     // 只在首次定位时移动地图到用户位置
     if (isFirstLocation) {
-      map.flyTo({
+      isFirstLocation = false; // 立即设置为false防止重复调用
+      
+      // 检测是否为移动端
+      const isMobile = window.innerWidth <= 768;
+      
+      // 移动端需要考虑底部控制面板的高度，调整padding使定位点在视觉中心
+      const flyOptions = {
         center: [longitude, latitude],
-        zoom: 18,
+        zoom: 17,
         duration: 1000
-      });
-      isFirstLocation = false;
+      };
+      
+      if (isMobile) {
+        // 移动端：底部有控制面板，添加底部padding
+        flyOptions.padding = { bottom: 150, top: 50, left: 0, right: 0 };
+      }
+      
+      map.flyTo(flyOptions);
     }
     
     locateButton.classList.remove('locating');
@@ -454,55 +501,6 @@
     isTracking = false;
   }
   
-  // 设备方向处理
-  let currentHeading = 0;
-  
-  function updateMarkerRotation(heading) {
-    const marker = document.getElementById('user-location-marker');
-    if (marker && heading !== null) {
-      currentHeading = heading;
-      marker.style.transform = `rotate(${heading}deg)`;
-    }
-  }
-  
-  function handleOrientation(event) {
-    let heading = null;
-    
-    // 处理不同的方向数据源
-    if (event.webkitCompassHeading !== undefined) {
-      // iOS Safari
-      heading = event.webkitCompassHeading;
-    } else if (event.alpha !== null) {
-      // Android Chrome and others
-      heading = 360 - event.alpha;
-    }
-    
-    if (heading !== null) {
-      updateMarkerRotation(heading);
-    }
-  }
-  
-  function startOrientationTracking() {
-    // 请求设备方向权限（iOS 13+需要）
-    if (typeof DeviceOrientationEvent !== 'undefined' && 
-        typeof DeviceOrientationEvent.requestPermission === 'function') {
-      DeviceOrientationEvent.requestPermission()
-        .then(permissionState => {
-          if (permissionState === 'granted') {
-            window.addEventListener('deviceorientation', handleOrientation, true);
-          }
-        })
-        .catch(console.error);
-    } else if (window.DeviceOrientationEvent) {
-      // 非iOS或旧版本iOS
-      window.addEventListener('deviceorientation', handleOrientation, true);
-    }
-  }
-  
-  function stopOrientationTracking() {
-    window.removeEventListener('deviceorientation', handleOrientation, true);
-  }
-  
   locateButton.addEventListener('click', function() {
     if (!navigator.geolocation) {
       alert('Geolocation is not supported / 您的浏览器不支持定位功能');
@@ -515,9 +513,9 @@
         navigator.geolocation.clearWatch(watchId);
         watchId = null;
       }
-      stopOrientationTracking();
       isTracking = false;
       isFirstLocation = true; // 重置首次定位标记
+      lastPosition = null; // 重置上次位置
       locateButton.classList.remove('active', 'locating');
       
       // 移除用户位置标记
@@ -531,17 +529,25 @@
       isFirstLocation = true; // 重置首次定位标记
       locateButton.classList.add('locating');
       
-      // 启动方向追踪
-      startOrientationTracking();
-      
-      // 持续追踪用户位置
-      watchId = navigator.geolocation.watchPosition(
+      // 先立即获取一次位置并飞到该位置
+      navigator.geolocation.getCurrentPosition(
         updateUserLocation,
         handleLocationError,
         {
           enableHighAccuracy: true,
           timeout: 10000,
           maximumAge: 0
+        }
+      );
+      
+      // 然后持续追踪用户位置
+      watchId = navigator.geolocation.watchPosition(
+        updateUserLocation,
+        handleLocationError,
+        {
+          enableHighAccuracy: true,
+          timeout: 15000,
+          maximumAge: 5000 // 允许使用5秒内的缓存位置
         }
       );
     }
