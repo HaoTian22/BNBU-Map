@@ -24,6 +24,13 @@ map_to_area -> .searchArea;
   nwr["shop"](area.searchArea);
   
   nwr["emergency"](area.searchArea);
+
+  /* nwr["highway"="bus_stop"](area.searchArea); */
+
+  nwr["entrance"](area.searchArea);
+
+  /* 几个大广场 */
+  nwr["highway"="pedestrian"]["name"](area.searchArea);
   
 );
 

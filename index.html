@@ -1000,11 +1000,57 @@
 
         const props = element.tags || {};
         
-        // 如果是除颤器，统一设置名称为AED
-        if (props.emergency === 'defibrillator') {
+        // 特殊名称处理
+        if (props.emergency === 'defibrillator' && !props.name) {
           props['name:en'] = 'AED';
           props['name:zh'] = '自动体外除颤器';
           props.name = 'AED';
+        }
+        if ((props.amenity === 'lost_property_office' || props.office === 'lost_property') && !props.name) {
+          props['name:en'] = 'Lost and Found';
+          props['name:zh'] = '失物招领处';
+          props.name = 'Lost and Found';
+        }
+        if (props.amenity === 'fire_station' && !props.name) {
+          props['name:en'] = 'Fire Station';
+          props['name:zh'] = '消防站';
+          props.name = 'Fire Station';
+        }
+        // parking_entrance
+        if (props.amenity === 'parking_entrance' && !props.name) {
+          props['name:en'] = 'Parking Entrance';
+          props['name:zh'] = '停车场入口';
+          props.name = 'Parking Entrance';
+        }
+        // waste_disposal
+        if (props.amenity === 'waste_disposal' && !props.name) {
+          props['name:en'] = 'Waste Disposal';
+          props['name:zh'] = '垃圾回收点';
+          props.name = 'Waste Disposal';
+        }
+        // parking
+        if (props.amenity === 'parking' && !props.name) {
+          props['name:en'] = 'Parking';
+          props['name:zh'] = '停车场';
+          props.name = 'Parking';
+        }
+        // bicycle_parking
+        if (props.amenity === 'bicycle_parking' && !props.name) {
+          props['name:en'] = 'Bicycle Parking';
+          props['name:zh'] = '自行车停车点';
+          props.name = 'Bicycle Parking';
+        }
+        // waste_transfer_station
+        if (props.amenity === 'waste_transfer_station' && !props.name) {
+          props['name:en'] = 'Waste Transfer Station';
+          props['name:zh'] = '垃圾中转站';
+          props.name = 'Waste Transfer Station';
+        }
+        // fire_hydrant
+        if (props.emergency === 'fire_hydrant' && !props.name) {
+          props['name:en'] = 'Fire Hydrant';
+          props['name:zh'] = '消防栓';
+          props.name = 'Fire Hydrant';
         }
         
         // 处理名称：英文/中文格式
