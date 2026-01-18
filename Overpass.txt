@@ -12,6 +12,7 @@ map_to_area -> .searchArea;
 (
   /* 查找有 amenity 且有 name 的元素 */
   nwr["amenity"](area.searchArea);
+  nwr["leisure"](area.searchArea);
   
   /* 查找有 office 且有 name 的元素 */
   nwr["office"](area.searchArea);
