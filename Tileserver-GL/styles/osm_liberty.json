@@ -602,6 +602,46 @@
       }
     },
     {
+      "id": "road_construction",
+      "type": "line",
+      "source": "openmaptiles",
+      "source-layer": "transportation",
+      "filter": [
+        "all",
+        [
+          "==",
+          ["geometry-type"],
+          "LineString"
+        ],
+        [
+          "in",
+          ["get", "class"],
+          [
+            "literal",
+            [
+              "primary_construction",
+              "secondary_construction",
+              "tertiary_construction",
+              "minor_construction",
+              "service_construction"
+            ]
+          ]
+        ]
+      ],
+      "paint": {
+        "line-color": "rgba(209, 209, 209, 0.6)",
+        "line-width": {
+          "base": 1.2,
+          "stops": [
+            [6.5, 0],
+            [8, 0.5],
+            [20, 13]
+          ]
+        },
+        "line-dasharray": [1, 0.5]
+      }
+    },
+    {
       "id": "road_service_track_casing",
       "type": "line",
       "source": "openmaptiles",
@@ -1367,7 +1407,7 @@
           [
             "format",
             ["get", "name"], {},
-            "\n", {},
+            " ", {},
             ["get", "name:latin"], { "font-scale": 0.8 }
           ],
           ["get", "name"]
@@ -1609,13 +1649,13 @@
           [
             "format",
             ["get", "name"], {},
-            "\n", {},
+            " ", {},
             ["get", "name:latin"], { "font-scale": 0.8 }
           ],
           ["get", "name"]
         ],
         "text-font": ["MiSans Semibold"],
-        "text-offset": [0, 0.15],
+        "text-offset": [0, 0],
         "text-size": {"base": 1, "stops": [[13, 12], [14, 13]]}
       },
       "paint": {
