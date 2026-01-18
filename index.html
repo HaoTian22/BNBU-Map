@@ -299,6 +299,79 @@
       }
     }
     
+    /* 加载条样式 */
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 10000;
+      opacity: 1;
+      transition: opacity 0.5s ease;
+    }
+    
+    .loading-overlay.fade-out {
+      opacity: 0;
+      pointer-events: none;
+    }
+    
+    .loading-content {
+      text-align: center;
+      font-family: Arial, sans-serif;
+    }
+    
+    .loading-spinner {
+      width: 50px;
+      height: 50px;
+      border: 4px solid #e5e7eb;
+      border-top: 4px solid #2563EB;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 20px;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    .loading-text {
+      font-size: 16px;
+      color: #333;
+      margin-bottom: 10px;
+      font-weight: 500;
+    }
+    
+    .loading-subtext {
+      font-size: 12px;
+      color: #666;
+    }
+    
+    .loading-progress-bar {
+      width: 250px;
+      height: 4px;
+      background: #e5e7eb;
+      border-radius: 2px;
+      overflow: hidden;
+      margin: 15px auto 0;
+    }
+    
+    .loading-progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #2563EB, #3b82f6);
+      border-radius: 2px;
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+    
     /* 移动端适配 */
     @media (max-width: 768px) {
       .search-container {
@@ -364,6 +437,18 @@
   </style>
 </head>
 <body>
+<!-- 加载提示 -->
+<div class="loading-overlay" id="loading-overlay">
+  <div class="loading-content">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">Loading Map / 地图加载中...</div>
+    <div class="loading-subtext">Preparing map tiles / 正在准备地图瓦片</div>
+    <div class="loading-progress-bar">
+      <div class="loading-progress-fill" id="loading-progress"></div>
+    </div>
+  </div>
+</div>
+
 <div id="map"></div>
 
 <!-- 搜索栏 -->
@@ -405,12 +490,117 @@
 </div>
 
 <script>
+  // 加载进度管理
+  let pbfLoadDetected = false;
+  let styleLoaded = false;
+  let tilesLoaded = false;
+  const loadingOverlay = document.getElementById('loading-overlay');
+  const loadingProgress = document.getElementById('loading-progress');
+  
+  // 更新加载进度
+  function updateLoadingProgress(progress) {
+    if (loadingProgress) {
+      loadingProgress.style.width = progress + '%';
+    }
+  }
+  
+  // 隐藏加载条
+  function hideLoadingOverlay() {
+    if (loadingOverlay && !loadingOverlay.classList.contains('fade-out')) {
+      updateLoadingProgress(100);
+      setTimeout(() => {
+        loadingOverlay.classList.add('fade-out');
+        setTimeout(() => {
+          loadingOverlay.style.display = 'none';
+        }, 500);
+      }, 300);
+    }
+  }
+  
+  // 监听网络请求以检测pbf文件加载
+  const originalFetch = window.fetch;
+  let pbfRequestCount = 0;
+  let pbfLoadedCount = 0;
+  
+  window.fetch = function(...args) {
+    const url = args[0];
+    
+    // 检测pbf文件请求
+    if (typeof url === 'string' && url.includes('.pbf')) {
+      pbfRequestCount++;
+      pbfLoadDetected = true;
+      
+      return originalFetch.apply(this, args).then(response => {
+        if (response.ok) {
+          pbfLoadedCount++;
+          // 更新进度（pbf加载占60%）
+          const pbfProgress = Math.min((pbfLoadedCount / Math.max(pbfRequestCount, 1)) * 60, 60);
+          updateLoadingProgress(pbfProgress);
+          
+          // 如果第一个pbf文件加载完成
+          if (pbfLoadedCount === 1) {
+            console.log('First pbf tile loaded');
+          }
+        }
+        return response;
+      }).catch(error => {
+        console.error('Error loading pbf:', error);
+        return Promise.reject(error);
+      });
+    }
+    
+    return originalFetch.apply(this, args);
+  };
+  
+  // 初始进度
+  updateLoadingProgress(10);
+  
   const map = new maplibregl.Map({
     container: 'map',
     style: 'https://maptiles.haotian22.top/styles/osm-liberty/style.json',
     center: [113.514982, 22.354065], // 修改为数据中心点
     zoom: 17 // 修改为数据支持的缩放级别
   });
+  
+  // 监听地图样式加载完成
+  map.on('styledata', function() {
+    if (!styleLoaded) {
+      styleLoaded = true;
+      updateLoadingProgress(30);
+      console.log('Map style loaded');
+    }
+  });
+  
+  // 监听地图数据加载（包括瓦片）
+  map.on('data', function(e) {
+    if (e.isSourceLoaded && pbfLoadDetected && !tilesLoaded) {
+      tilesLoaded = true;
+      updateLoadingProgress(80);
+    }
+  });
+  
+  // 监听地图完全加载完成
+  map.on('load', function() {
+    console.log('Map fully loaded');
+    updateLoadingProgress(90);
+    hideLoadingOverlay();
+  });
+  
+  // 监听首次渲染完成（作为备用检测）
+  map.on('idle', function() {
+    if (!tilesLoaded) {
+      tilesLoaded = true;
+      hideLoadingOverlay();
+    }
+  });
+  
+  // 超时保护：15秒后自动隐藏加载条
+  setTimeout(() => {
+    if (loadingOverlay && !loadingOverlay.classList.contains('fade-out')) {
+      console.warn('Loading timeout, hiding overlay');
+      hideLoadingOverlay();
+    }
+  }, 15000);
   
   // 定位功能
   let userLocationMarker = null;
