@@ -1097,6 +1097,9 @@
         if (props['defibrillator:location']) popupContent += `<p style="margin: 4px 0; color: #666;"><strong>Location / 位置:</strong> ${props['defibrillator:location']}</p>`;
         if (props.phone) popupContent += `<p style="margin: 4px 0; color: #666;"><strong>Phone / 电话:</strong> ${props.phone}</p>`;
         if (props.website) popupContent += `<p style="margin: 4px 0; color: #666;"><strong>Website / 网站:</strong> <a href="${props.website}" target="_blank" style="color: ${categoryInfo.color};">链接</a></p>`;
+        if (props.email) popupContent += `<p style="margin: 4px 0; color: #666;"><strong>Email / 邮箱:</strong> <a href="mailto:${props.email}" style="color: ${categoryInfo.color};">${props.email}</a></p>`;
+        if (props.note) popupContent += `<p style="margin: 4px 0; color: #666;"><strong>Note / 备注:</strong> ${props.note}</p>`;
+        if (props.description) popupContent += `<p style="margin: 4px 0; color: #666;"><strong>Description / 描述:</strong> ${props.description}</p>`;
         
         popupContent += '</div>';
 
