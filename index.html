@@ -34,14 +34,15 @@
       background: rgba(255, 255, 255, 0.85);
       backdrop-filter: blur(10px) saturate(100%);
       -webkit-backdrop-filter: blur(10px) saturate(100%);
-      scrollbar-color: grey rgba(255,255,225,0);
     }
     
     .search-results {
+      scrollbar-color: grey rgba(255,255,225,0);
+      scrollbar-width: none;
       background: rgba(255, 255, 255, 0.85);
       backdrop-filter: blur(10px) saturate(100%);
       -webkit-backdrop-filter: blur(10px) saturate(100%);
-      border-radius: 30px;
+      border-radius: 20px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.2);
       margin-top: 5px;
       max-height: 300px;
@@ -59,6 +60,9 @@
       border-bottom: 1px solid #eee;
       font-size: 13px;
       font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
     
     .search-result-item:last-child {
@@ -78,6 +82,18 @@
     .search-result-category {
       font-size: 12px;
       color: #666;
+    }
+    
+    .search-result-info {
+      flex: 1;
+    }
+    
+    .search-result-distance {
+      font-size: 12px;
+      color: #2563EB;
+      font-weight: 500;
+      margin-left: 10px;
+      white-space: nowrap;
     }
     
     /* 图层控制面板样式 */
@@ -984,6 +1000,13 @@
 
         const props = element.tags || {};
         
+        // 如果是除颤器，统一设置名称为AED
+        if (props.emergency === 'defibrillator') {
+          props['name:en'] = 'AED';
+          props['name:zh'] = '自动体外除颤器';
+          props.name = 'AED';
+        }
+        
         // 处理名称：英文/中文格式
         let displayName = "未命名";
         const nameEn = props?.['name:en'];
@@ -1098,12 +1121,38 @@
         }).slice(0, 10); // 最多显示10条结果
         
         if (matches.length > 0) {
-          searchResults.innerHTML = matches.map(item => `
-            <div class="search-result-item" data-index="${markerData.indexOf(item)}">
-              <div class="search-result-name">${item.name || '未命名'}</div>
-              <div class="search-result-category">${item.categoryLabel}</div>
-            </div>
-          `).join('');
+          searchResults.innerHTML = matches.map(item => {
+            let distanceHtml = '';
+            // 如果定位已开启且有用户位置，计算并显示距离
+            if (lastPosition && isTracking) {
+              const distance = calculateDistance(
+                lastPosition.latitude,
+                lastPosition.longitude,
+                item.lngLat[1],
+                item.lngLat[0]
+              );
+              
+              // 格式化距离显示
+              let distanceText;
+              if (distance < 1000) {
+                distanceText = Math.round(distance) + 'm';
+              } else {
+                distanceText = (distance / 1000).toFixed(1) + 'km';
+              }
+              
+              distanceHtml = `<div class="search-result-distance">${distanceText}</div>`;
+            }
+            
+            return `
+              <div class="search-result-item" data-index="${markerData.indexOf(item)}">
+                <div class="search-result-info">
+                  <div class="search-result-name">${item.name || '未命名'}</div>
+                  <div class="search-result-category">${item.categoryLabel}</div>
+                </div>
+                ${distanceHtml}
+              </div>
+            `;
+          }).join('');
           searchResults.classList.add('show');
         } else {
           searchResults.innerHTML = '<div class="search-result-item">No results / 无结果</div>';
