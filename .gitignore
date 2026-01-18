@@ -1,0 +1,6 @@
+POI.json
+*.exe
+*.dll
+*.log
+*.tmp
+*.DS_Store
