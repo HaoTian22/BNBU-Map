@@ -195,17 +195,17 @@
     }
     
     .layer-control-content {
-      max-height: 1000px;
+      /* max-height will be set by JavaScript updateContentHeight() */
       opacity: 1;
       overflow: hidden;
-      transition: max-height 0.8s cubic-bezier(0.4, 0, 0.2, 1), 
+      transition: max-height 1s cubic-bezier(0.4, 0, 0.2, 1), 
                   opacity 0.7s ease-in-out;
     }
     
     .layer-control.collapsed .layer-control-content {
-      max-height: 0;
+      max-height: 0 !important;
       opacity: 0;
-      transition: max-height 0.8s cubic-bezier(0.4, 0, 0.2, 1), 
+      transition: max-height 1s cubic-bezier(0.4, 0, 0.2, 1), 
                   opacity 0.7s ease-in-out;
     }
     
@@ -418,16 +418,14 @@
         bottom: 10px;
         right: 10px;
         left: 10px;
-        max-height: 60vh;
+        max-height: 65vh;
         max-width: none;
         padding: 10px;
         scrollbar-width: none;
-        transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        /* transition: all 1s cubic-bezier(0.4, 0, 0.2, 1); */
       }
 
-      .layer-control-content {
-        max-height: 60vh;
-      }
+
       
       .layer-toggle-btn {
         white-space: nowrap;
@@ -1292,10 +1290,71 @@
       const layerControl = document.querySelector('.layer-control');
       const layerToggle = document.getElementById('layer-toggle');
       const toggleText = document.getElementById('toggle-text');
+      const layerControlContent = document.querySelector('.layer-control-content');
       
       // 检测是否为移动端
       function isMobile() {
         return window.innerWidth <= 768;
+      }
+      
+      // 动态设置内容的max-height为实际高度
+      function updateContentHeight() {
+        if (layerControlContent) {
+          // 临时移除限制以测量真实高度
+          const wasCollapsed = layerControl.classList.contains('collapsed');
+          const originalMaxHeight = layerControlContent.style.maxHeight;
+          
+          // 临时展开并移除max-height限制
+          layerControl.classList.remove('collapsed');
+          layerControlContent.style.maxHeight = 'none';
+          layerControlContent.style.transition = 'none';
+          
+          // 测量实际高度
+          const actualHeight = layerControlContent.scrollHeight;
+          
+          // 计算可用空间：考虑移动端和桌面端的差异
+          const mobile = isMobile();
+          let maxAllowedHeight;
+          
+          if (mobile) {
+            // 移动端：.layer-control 限制为 60vh，需要减去按钮、padding等的高度
+            const controlButtons = layerControl.querySelector('.control-buttons');
+            const buttonsHeight = controlButtons ? controlButtons.offsetHeight : 0;
+            const padding = 10 * 2; // 移动端 padding: 10px
+            const margins = 10; // 按钮和内容之间的margin
+            
+            maxAllowedHeight = window.innerHeight * 0.65 - buttonsHeight - padding - margins;
+          } else {
+            // 桌面端：.layer-control 限制为 80vh
+            const controlButtons = layerControl.querySelector('.control-buttons');
+            const heading = layerControl.querySelector('h3');
+            const attribution = layerControl.querySelector('.osm-attribution');
+            const feedback = layerControl.querySelector('.feedback-note');
+            
+            const buttonsHeight = controlButtons ? controlButtons.offsetHeight : 0;
+            const headingHeight = heading ? heading.offsetHeight : 0;
+            const attributionHeight = attribution ? attribution.offsetHeight : 0;
+            const feedbackHeight = feedback ? feedback.offsetHeight : 0;
+            const padding = 15 * 2; // 桌面端 padding: 15px
+            const margins = 20; // 各元素之间的间距
+            
+            maxAllowedHeight = window.innerHeight * 0.8 - buttonsHeight - headingHeight - 
+                             attributionHeight - feedbackHeight - padding - margins;
+          }
+          
+          // 设置max-height为实际高度和允许的最大高度中的较小值
+          const finalHeight = Math.min(actualHeight, maxAllowedHeight);
+          layerControlContent.style.maxHeight = finalHeight + 'px';
+          
+          // 恢复过渡效果
+          setTimeout(() => {
+            layerControlContent.style.transition = '';
+            // 如果之前是收起状态，恢复收起
+            if (wasCollapsed) {
+              layerControl.classList.add('collapsed');
+            }
+          }, 0);
+        }
       }
       
       // 初始化面板状态
@@ -1305,11 +1364,17 @@
         layerControl.classList.remove('collapsed');
       }
       
+      // 初始化时设置高度
+      updateContentHeight();
+      
+      // 窗口大小改变时更新高度
+      window.addEventListener('resize', updateContentHeight);
+      
       if (layerToggle) {
         layerToggle.addEventListener('click', function(e) {
           e.stopPropagation();
           layerControl.classList.toggle('collapsed');
-          
+
           if (layerControl.classList.contains('collapsed')) {
             toggleText.textContent = '⚙ Filters / 筛选';
           } else {
