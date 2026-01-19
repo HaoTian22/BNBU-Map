@@ -15,11 +15,11 @@ Features include:
 
 ## Data Update Schedule
 
-POI: Updated at 4 AM daily via Overpass API following `Overpass.txt` query, by `fetch-poi.sh` (Source: [OSM](https://www.openstreetmap.org/))
+POI: Updated at 3:10 AM (UTC+8) daily via Overpass API following `Overpass.txt` query, by `fetch-poi.sh` (Source: [OSM](https://www.openstreetmap.org/))
 
 Map Tiles: Updated manually (Source: [OSM](https://www.openstreetmap.org/))
 
-HTML/JS/CSS: Updated at 3 AM daily, or as needed. (Source: This GitHub Repository)
+HTML/JS/CSS: Updated at 3 AM (UTC+8) daily, or as needed. (Source: This GitHub Repository)
 
 ## Build the Project
 
