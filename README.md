@@ -17,7 +17,8 @@ Features include:
 
 POI: Updated at 3:10 AM (UTC+8) daily via Overpass API following `Overpass.txt` query, by `fetch-poi.sh` (Source: [OSM](https://www.openstreetmap.org/))
 
-Map Tiles: Updated manually (Source: [OSM](https://www.openstreetmap.org/))
+Map Tiles: Updated at 3:20 AM (UTC+8) every Monday, until 2026-12-01 (Source: [OSM](https://www.openstreetmap.org/))  
+Note: The service will be unavailable during the update process, estimated 5 minutes.
 
 HTML/JS/CSS: Updated at 3 AM (UTC+8) daily, or as needed. (Source: This GitHub Repository)
 
@@ -36,6 +37,8 @@ More details can be found in this blog post: https://haotian22.top/bddb0203.html
 Contributions are welcome! If you have suggestions, improvements, or bug fixes, please feel free to open an issue or submit a pull request.
 
 Or, you can add/modify details on the [OpenStreetMap](https://www.openstreetmap.org/) directly to improve the map data.
+
+Or, you can provide server resources to help host the map for better accessibility and performance.
 
 Note: OpenStreetMap is a public platform, make sure to follow their [contribution guidelines and consences](https://wiki.openstreetmap.org/wiki/Getting_Involved) when making edits, and be respectful of the community standards.
 
