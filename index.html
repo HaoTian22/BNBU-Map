@@ -166,7 +166,7 @@
       cursor: pointer;
       font-size: 13px;
       border-radius: 30px;
-      transition: all 0.2s;
+      transition: all 0.6s;
       background: #eff6ff;
       border: 2px solid transparent;
     }
@@ -197,7 +197,8 @@
     .layer-control-content {
       /* max-height will be set by JavaScript updateContentHeight() */
       opacity: 1;
-      overflow: hidden;
+      overflow-y: auto;
+      scrollbar-width: none;
       transition: max-height 1s cubic-bezier(0.4, 0, 0.2, 1), 
                   opacity 0.7s ease-in-out;
     }
@@ -316,10 +317,49 @@
       backdrop-filter: blur(10px) saturate(100%);
       -webkit-backdrop-filter: blur(10px) saturate(100%);
       background: rgba(255, 255, 255, 0.85);
+      animation: popupFadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     .maplibregl-popup-anchor-bottom .maplibregl-popup-tip {
-      border-top-color: rgba(255, 255, 255, 0.84)
+      border-top-color: rgba(255, 255, 255, 0.84);
+      animation: popupFadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    @keyframes popupFadeIn {
+      0% {
+        opacity: 0;
+      }
+      100% {
+        opacity: 1;
+      }
+    }
+
+    @keyframes popupFadeOut {
+      0% {
+        opacity: 1;
+      }
+      100% {
+        opacity: 0;
+      }
+    }
+
+    .maplibregl-popup.closing .maplibregl-popup-content {
+      animation: popupFadeOut 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+
+    .maplibregl-popup.closing .maplibregl-popup-tip {
+      animation: popupFadeOut 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+
+    /* 标记显示/隐藏动画 */
+    .maplibregl-marker {
+      transition: opacity 0.6s ease;
+      opacity: 1;
+    }
+
+    .maplibregl-marker.marker-hidden {
+      opacity: 0;
+      pointer-events: none;
     }
 
     @keyframes pulse {
@@ -722,7 +762,7 @@
       const flyOptions = {
         center: [longitude, latitude],
         zoom: 17,
-        duration: 1000
+        duration: 2000
       };
       
       if (isMobile) {
@@ -1118,11 +1158,37 @@
         
         popupContent += '</div>';
 
+        const popup = new maplibregl.Popup().setHTML(popupContent);
+        
+        // 保存原始的remove方法
+        const originalRemove = popup.remove.bind(popup);
+        let isClosing = false;
+        
+        // 重写remove方法以添加关闭动画
+        popup.remove = function() {
+          if (isClosing) return this;
+          isClosing = true;
+          
+          const popupElement = this._container;
+          if (popupElement) {
+            popupElement.classList.add('closing');
+            // 等待动画完成后再真正关闭
+            setTimeout(() => {
+              originalRemove();
+              isClosing = false;
+            }, 200); // 与动画时长一致
+          } else {
+            originalRemove();
+            isClosing = false;
+          }
+          return this;
+        };
+
         const marker = new maplibregl.Marker({
           color: categoryInfo.color
         })
           .setLngLat([lon, lat])
-          .setPopup(new maplibregl.Popup().setHTML(popupContent))
+          .setPopup(popup)
           .addTo(map);
         
         // 获取类别键名
@@ -1264,7 +1330,7 @@
           map.flyTo({
             center: data.lngLat,
             zoom: 19,
-            duration: 1000
+            duration: 2000
           });
           
           // 打开弹窗
@@ -1407,7 +1473,12 @@
           );
           const isVisible = group && groupStates[group];
           const element = item.marker.getElement();
-          element.style.display = isVisible ? '' : 'none';
+          
+          if (isVisible) {
+            element.classList.remove('marker-hidden');
+          } else {
+            element.classList.add('marker-hidden');
+          }
         });
       }
       
