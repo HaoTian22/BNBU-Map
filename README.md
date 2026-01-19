@@ -12,6 +12,8 @@ Features include:
 - Layer control to toggle different map features.
 - User real-time location viewing.
 - Mobile-friendly design for use on smartphones and tablets.
+- Fantastic Animations (you should really try it!)
+- Beautiful Arclic UI
 
 ## Data Update Schedule
 
