@@ -1300,14 +1300,22 @@
       // 动态设置内容的max-height为实际高度
       function updateContentHeight() {
         if (layerControlContent) {
-          // 临时移除限制以测量真实高度
+          // 保存当前状态
           const wasCollapsed = layerControl.classList.contains('collapsed');
-          const originalMaxHeight = layerControlContent.style.maxHeight;
           
-          // 临时展开并移除max-height限制
-          layerControl.classList.remove('collapsed');
-          layerControlContent.style.maxHeight = 'none';
+          // 完全禁用过渡动画，避免触发动画
+          const originalTransition = layerControlContent.style.transition;
           layerControlContent.style.transition = 'none';
+          
+          // 临时移除collapsed类以测量
+          layerControl.classList.remove('collapsed');
+          
+          // 临时移除max-height限制
+          const originalMaxHeight = layerControlContent.style.maxHeight;
+          layerControlContent.style.maxHeight = 'none';
+          
+          // 强制重排以确保样式生效
+          layerControlContent.offsetHeight;
           
           // 测量实际高度
           const actualHeight = layerControlContent.scrollHeight;
@@ -1346,14 +1354,16 @@
           const finalHeight = Math.min(actualHeight, maxAllowedHeight);
           layerControlContent.style.maxHeight = finalHeight + 'px';
           
+          // 如果之前是收起状态，立即恢复收起（在恢复过渡之前）
+          if (wasCollapsed) {
+            layerControl.classList.add('collapsed');
+          }
+          
+          // 强制重排
+          layerControlContent.offsetHeight;
+          
           // 恢复过渡效果
-          setTimeout(() => {
-            layerControlContent.style.transition = '';
-            // 如果之前是收起状态，恢复收起
-            if (wasCollapsed) {
-              layerControl.classList.add('collapsed');
-            }
-          }, 0);
+          layerControlContent.style.transition = originalTransition || '';
         }
       }
       
@@ -1367,7 +1377,7 @@
       // 初始化时设置高度
       updateContentHeight();
       
-      // 窗口大小改变时更新高度
+      // 窗口大小改变时更新高度（保持当前展开/收起状态）
       window.addEventListener('resize', updateContentHeight);
       
       if (layerToggle) {
@@ -1382,17 +1392,6 @@
           }
         });
       }
-      
-      // 窗口大小变化时重置状态
-      window.addEventListener('resize', function() {
-        if (isMobile()) {
-          layerControl.classList.add('collapsed');
-          toggleText.textContent = '⚙ Filters / 筛选';
-        } else {
-          layerControl.classList.remove('collapsed');
-          toggleText.textContent = '⚙ Filters / 筛选';
-        }
-      });
       
       // 存储每个分组的选中状态
       const groupStates = {};
