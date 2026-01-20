@@ -150,16 +150,73 @@
     <p class="subtitle">Last Updated: January 20, 2026 | 最后更新：2026年1月20日</p>
     
     <div class="highlight-box">
-      <strong>TL;DR:</strong> We use Google Analytics to collect anonymous usage data to improve the map experience. We DO NOT collect or store your personal location data, name, email, or any personally identifiable information.
+      <strong>TL;DR:</strong> We use Google Analytics to collect anonymous usage data to improve the map experience. This includes standard web analytics (browser type, device, general location from anonymized IP) and custom events (searches, clicks). We DO NOT collect your precise GPS location, name, email, or any personally identifiable information.
       <br><br>
-      <strong>简而言之：</strong>我们使用 Google Analytics 收集匿名使用数据以改善地图体验。我们不会收集或存储您的个人位置数据、姓名、邮箱或任何个人身份信息。
+      <strong>简而言之：</strong>我们使用 Google Analytics 收集匿名使用数据以改善地图体验。这包括标准网络分析（浏览器类型、设备、来自匿名化IP的大致位置）和自定义事件（搜索、点击）。我们不会收集您的精确GPS位置、姓名、邮箱或任何个人身份信息。
     </div>
 
     <h2>1. Information We Collect | 我们收集的信息</h2>
     
-    <h3>1.1 Analytics Data (via Google Analytics 4) | 分析数据</h3>
-    <p>When you use BNBU Map, we collect the following anonymous usage data through Google Analytics:</p>
-    <p>当您使用 BNBU Map 时，我们通过 Google Analytics 收集以下匿名使用数据：</p>
+    <h3>1.1 Automatically Collected Data (via Google Analytics 4) | 自动收集的数据</h3>
+    <p>Google Analytics automatically collects the following information when you visit BNBU Map (even without custom events):</p>
+    <p>当您访问 BNBU Map 时，Google Analytics 会自动收集以下信息（即使没有自定义事件）：</p>
+    
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Data Type<br>数据类型</th>
+          <th>Examples<br>示例</th>
+          <th>Purpose<br>用途</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Browser Information</strong><br>浏览器信息</td>
+          <td>Chrome, Firefox, Safari, Edge; Browser version, Language preference<br>Chrome、Firefox、Safari、Edge；浏览器版本、语言偏好</td>
+          <td>Optimize compatibility<br>优化兼容性</td>
+        </tr>
+        <tr>
+          <td><strong>Device Type</strong><br>设备类型</td>
+          <td>Desktop, Mobile, Tablet; Device brand/model, Operating System (Windows, macOS, iOS, Android)<br>桌面、移动、平板；设备品牌/型号、操作系统（Windows、macOS、iOS、Android）</td>
+          <td>Improve responsive design<br>改善响应式设计</td>
+        </tr>
+        <tr>
+          <td><strong>Screen Resolution</strong><br>屏幕分辨率</td>
+          <td>1920x1080, 375x667, etc.<br>1920x1080、375x667等</td>
+          <td>Optimize UI layout<br>优化界面布局</td>
+        </tr>
+        <tr>
+          <td><strong>Geographic Location</strong><br>地理位置</td>
+          <td>Country, Region, City (derived from anonymized IP)<br>国家、地区、城市（从匿名化IP推导）</td>
+          <td>Understand user demographics<br>了解用户群体</td>
+        </tr>
+        <tr>
+          <td><strong>Traffic Source</strong><br>流量来源</td>
+          <td>Referrer URL, Direct visit, Social media link<br>引荐URL、直接访问、社交媒体链接</td>
+          <td>Understand how users find the map<br>了解用户如何找到地图</td>
+        </tr>
+        <tr>
+          <td><strong>Page Views</strong><br>页面浏览</td>
+          <td>Page URL, Page title, Time on page<br>页面URL、页面标题、页面停留时间</td>
+          <td>Measure engagement<br>衡量用户参与度</td>
+        </tr>
+        <tr>
+          <td><strong>Session Data</strong><br>会话数据</td>
+          <td>Session duration, Number of pages viewed per session<br>会话时长、每个会话浏览的页面数</td>
+          <td>Understand user behavior patterns<br>了解用户行为模式</td>
+        </tr>
+      </tbody>
+    </table>
+    
+    <div class="highlight-box">
+      <strong>⚠️ Important:</strong> IP addresses are automatically <strong>anonymized</strong> by Google Analytics. Geographic location (country, region, city) is derived from the anonymized IP, not precise GPS coordinates.
+      <br><br>
+      <strong>⚠️ 重要：</strong>IP地址会被 Google Analytics <strong>自动匿名化</strong>。地理位置（国家、地区、城市）是从匿名化的IP推导出来的，而非精确的GPS坐标。
+    </div>
+    
+    <h3>1.2 Custom Event Data | 自定义事件数据</h3>
+    <p>In addition to the above, we track specific user interactions through custom events:</p>
+    <p>除上述数据外，我们通过自定义事件追踪特定的用户交互：</p>
     
     <table class="data-table">
       <thead>
@@ -223,25 +280,38 @@
       </tbody>
     </table>
 
-    <h3>1.2 What We DO NOT Collect | 我们不收集的信息</h3>
+    <h3>1.3 What We DO NOT Collect | 我们不收集的信息</h3>
     <ul>
-      <li><strong>Personal Location Data</strong>: We do NOT track or store your GPS coordinates, movement patterns, or real-time location.
-        <br><strong>个人位置数据</strong>：我们不会追踪或存储您的GPS坐标、移动模式或实时位置。</li>
-      <li><strong>Personal Information</strong>: No names, email addresses, phone numbers, or other personally identifiable information.
-        <br><strong>个人信息</strong>：不收集姓名、邮箱地址、电话号码或其他个人身份信息。</li>
-      <li><strong>IP Addresses</strong>: Google Analytics anonymizes IP addresses by default.
-        <br><strong>IP地址</strong>：Google Analytics 默认匿名化IP地址。</li>
+      <li><strong>Precise GPS Location Data</strong>: We do NOT track or store your exact GPS coordinates, movement patterns, or real-time location. Geographic location in GA4 is city-level at most (from anonymized IP).
+        <br><strong>精确GPS位置数据</strong>：我们不会追踪或存储您的精确GPS坐标、移动模式或实时位置。GA4中的地理位置最多到城市级别（来自匿名化IP）。</li>
+      <li><strong>Personal Identifiable Information (PII)</strong>: No names, email addresses, phone numbers, user IDs, or other data that can directly identify you.
+        <br><strong>个人身份信息（PII）</strong>：不收集姓名、邮箱地址、电话号码、用户ID或其他可直接识别您的数据。</li>
+      <li><strong>Raw IP Addresses</strong>: Google Analytics automatically anonymizes IP addresses before processing.
+        <br><strong>原始IP地址</strong>：Google Analytics 在处理前自动匿名化IP地址。</li>
+      <li><strong>Cookies for Tracking Across Sites</strong>: We do not use cross-site tracking cookies.
+        <br><strong>跨站追踪Cookie</strong>：我们不使用跨站追踪Cookie。</li>
     </ul>
 
     <h2>2. How We Use the Data | 如何使用数据</h2>
     <p>The collected data is used exclusively for:</p>
     <p>收集的数据仅用于：</p>
     <ul>
-      <li>Understanding how users interact with the map<br>了解用户如何与地图交互</li>
-      <li>Identifying popular features and locations<br>识别热门功能和地点</li>
-      <li>Diagnosing technical issues (e.g., location errors)<br>诊断技术问题（如定位错误）</li>
-      <li>Improving user experience and interface design<br>改善用户体验和界面设计</li>
-      <li>Optimizing search functionality<br>优化搜索功能</li>
+      <li>Understanding how users interact with the map and which features are most used<br>了解用户如何与地图交互以及哪些功能最常用</li>
+      <li>Identifying popular features, POI categories, and locations<br>识别热门功能、POI类别和地点</li>
+      <li>Optimizing the interface for different devices and screen sizes<br>为不同设备和屏幕尺寸优化界面</li>
+      <li>Diagnosing technical issues (e.g., browser compatibility, location errors)<br>诊断技术问题（如浏览器兼容性、定位错误）</li>
+      <li>Improving search functionality and result relevance<br>改善搜索功能和结果相关性</li>
+      <li>Understanding user demographics (country/region) to prioritize features<br>了解用户群体（国家/地区）以优先开发功能</li>
+      <li>Measuring site performance and load times<br>衡量网站性能和加载时间</li>
+    </ul>
+    
+    <p><strong>We never use this data for:</strong></p>
+    <p><strong>我们绝不会将数据用于：</strong></p>
+    <ul>
+      <li>Selling or sharing with third parties for marketing purposes<br>出售或与第三方分享用于营销目的</li>
+      <li>Identifying or tracking individual users<br>识别或追踪个人用户</li>
+      <li>Creating user profiles for advertising<br>创建用于广告的用户画像</li>
+      <li>Cross-site tracking or behavioral advertising<br>跨站追踪或行为广告</li>
     </ul>
 
     <h2>3. Data Storage and Security | 数据存储和安全</h2>
