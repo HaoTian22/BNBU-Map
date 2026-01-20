@@ -5,6 +5,7 @@
 
 # 主要页面
 index.html
+privacy.html
 favicon.ico
 
 # POI 更新脚本

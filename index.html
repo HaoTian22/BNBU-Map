@@ -505,9 +505,160 @@
         display: block;
       }
     }
+    
+    /* Cookie同意横幅样式 */
+    .cookie-consent {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(255, 255, 255, 0.98);
+      backdrop-filter: blur(20px) saturate(100%);
+      -webkit-backdrop-filter: blur(20px) saturate(100%);
+      padding: 20px;
+      box-shadow: 0 -2px 20px rgba(0,0,0,0.15);
+      z-index: 10001;
+      font-family: Arial, sans-serif;
+      display: none;
+      animation: slideUp 0.4s ease-out;
+    }
+    
+    .cookie-consent.show {
+      display: block;
+    }
+    
+    @keyframes slideUp {
+      from {
+        transform: translateY(100%);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+    
+    .cookie-consent-content {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+    
+    .cookie-consent-text {
+      flex: 1;
+      font-size: 14px;
+      line-height: 1.6;
+      color: #333;
+    }
+    
+    .cookie-consent-text h3 {
+      margin: 0 0 8px 0;
+      font-size: 16px;
+      color: #2563EB;
+    }
+    
+    .cookie-consent-text p {
+      margin: 0 0 8px 0;
+    }
+    
+    .cookie-consent-text a {
+      color: #2563EB;
+      text-decoration: none;
+      font-weight: 500;
+    }
+    
+    .cookie-consent-text a:hover {
+      text-decoration: underline;
+    }
+    
+    .cookie-consent-buttons {
+      display: flex;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+    
+    .cookie-btn {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 30px;
+      font-size: 14px;
+      font-family: Arial, sans-serif;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    
+    .cookie-btn-accept {
+      background: #2563EB;
+      color: white;
+    }
+    
+    .cookie-btn-accept:hover {
+      background: #1d4ed8;
+    }
+    
+    .cookie-btn-decline {
+      background: #f3f4f6;
+      color: #6b7280;
+    }
+    
+    .cookie-btn-decline:hover {
+      background: #e5e7eb;
+    }
+    
+    @media (max-width: 768px) {
+      .cookie-consent {
+        padding: 15px;
+      }
+      
+      .cookie-consent-content {
+        flex-direction: column;
+        gap: 15px;
+      }
+      
+      .cookie-consent-text {
+        font-size: 13px;
+      }
+      
+      .cookie-consent-text h3 {
+        font-size: 15px;
+      }
+      
+      .cookie-consent-buttons {
+        width: 100%;
+        flex-direction: column;
+      }
+      
+      .cookie-btn {
+        width: 100%;
+        padding: 14px 24px;
+      }
+    }
   </style>
 </head>
 <body>
+<!-- Cookie同意横幅 -->
+<div class="cookie-consent" id="cookie-consent">
+  <div class="cookie-consent-content">
+    <div class="cookie-consent-text">
+      <h3>🍪 We use Google Analytics / 我们使用 Google Analytics</h3>
+      <p>
+        We collect anonymous usage data to improve your experience, including search terms, POI interactions, and feature usage. No personal location data is stored. 
+        <a href="privacy.html" target="_blank">Learn more / 了解更多</a>
+      </p>
+      <p style="font-size: 12px; color: #6b7280; margin-top: 5px;">
+        我们收集匿名使用数据以改善用户体验,包括搜索词、POI交互和功能使用情况。不存储个人位置数据。
+      </p>
+    </div>
+    <div class="cookie-consent-buttons">
+      <button class="cookie-btn cookie-btn-accept" id="cookie-accept">Accept / 接受</button>
+      <button class="cookie-btn cookie-btn-decline" id="cookie-decline">Decline / 拒绝</button>
+    </div>
+  </div>
+</div>
+
 <!-- 加载提示 -->
 <div class="loading-overlay" id="loading-overlay">
   <div class="loading-content">
@@ -561,6 +712,62 @@
 </div>
 
 <script>
+  // Cookie同意管理
+  let analyticsConsent = false;
+  
+  // 检查用户是否已做出选择
+  function checkAnalyticsConsent() {
+    const consent = localStorage.getItem('analytics_consent');
+    if (consent === null) {
+      // 未做选择，显示横幅
+      document.getElementById('cookie-consent').classList.add('show');
+      return false;
+    }
+    return consent === 'true';
+  }
+  
+  // 初始化时检查同意状态
+  analyticsConsent = checkAnalyticsConsent();
+  
+  // 处理接受按钮
+  document.getElementById('cookie-accept')?.addEventListener('click', function() {
+    localStorage.setItem('analytics_consent', 'true');
+    analyticsConsent = true;
+    document.getElementById('cookie-consent').classList.remove('show');
+    
+    // 发送同意事件
+    if (typeof gtag !== 'undefined') {
+      gtag('consent', 'update', {
+        'analytics_storage': 'granted'
+      });
+      gtag('event', 'cookie_consent', {
+        action: 'accept'
+      });
+    }
+  });
+  
+  // 处理拒绝按钮
+  document.getElementById('cookie-decline')?.addEventListener('click', function() {
+    localStorage.setItem('analytics_consent', 'false');
+    analyticsConsent = false;
+    document.getElementById('cookie-consent').classList.remove('show');
+    
+    // 发送拒绝事件（这是最后一次GA调用）
+    if (typeof gtag !== 'undefined') {
+      gtag('consent', 'update', {
+        'analytics_storage': 'denied'
+      });
+    }
+  });
+  
+  // 包装gtag函数，只在用户同意时才发送事件
+  const originalGtag = window.gtag;
+  window.gtag = function() {
+    if (analyticsConsent && typeof originalGtag === 'function') {
+      originalGtag.apply(this, arguments);
+    }
+  };
+  
   // 加载进度管理
   let pbfLoadDetected = false;
   let styleLoaded = false;
