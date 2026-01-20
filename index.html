@@ -520,11 +520,15 @@
       z-index: 10001;
       font-family: Arial, sans-serif;
       display: none;
-      animation: slideUp 0.4s ease-out;
+      animation: slideUp 0.8s ease-out;
     }
     
     .cookie-consent.show {
       display: block;
+    }
+    
+    .cookie-consent.closing {
+      animation: slideDown 0.8s ease-out forwards;
     }
     
     @keyframes slideUp {
@@ -535,6 +539,17 @@
       to {
         transform: translateY(0);
         opacity: 1;
+      }
+    }
+    
+    @keyframes slideDown {
+      from {
+        transform: translateY(0);
+        opacity: 1;
+      }
+      to {
+        transform: translateY(100%);
+        opacity: 0;
       }
     }
     
@@ -733,7 +748,14 @@
   document.getElementById('cookie-accept')?.addEventListener('click', function() {
     localStorage.setItem('analytics_consent', 'true');
     analyticsConsent = true;
-    document.getElementById('cookie-consent').classList.remove('show');
+    
+    const cookieConsent = document.getElementById('cookie-consent');
+    cookieConsent.classList.add('closing');
+    
+    // 等待动画完成后移除元素
+    setTimeout(() => {
+      cookieConsent.classList.remove('show', 'closing');
+    }, 800);
     
     // 发送同意事件
     if (typeof gtag !== 'undefined') {
@@ -750,7 +772,14 @@
   document.getElementById('cookie-decline')?.addEventListener('click', function() {
     localStorage.setItem('analytics_consent', 'false');
     analyticsConsent = false;
-    document.getElementById('cookie-consent').classList.remove('show');
+    
+    const cookieConsent = document.getElementById('cookie-consent');
+    cookieConsent.classList.add('closing');
+    
+    // 等待动画完成后移除元素
+    setTimeout(() => {
+      cookieConsent.classList.remove('show', 'closing');
+    }, 800);
     
     // 发送拒绝事件（这是最后一次GA调用）
     if (typeof gtag !== 'undefined') {
