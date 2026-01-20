@@ -44,6 +44,28 @@ Or, you can provide server resources to help host the map for better accessibili
 
 Note: OpenStreetMap is a public platform, make sure to follow their [contribution guidelines and consences](https://wiki.openstreetmap.org/wiki/Getting_Involved) when making edits, and be respectful of the community standards.
 
+## License
+
+This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
+
+### Third-Party Licenses
+
+This project uses data and components from various sources:
+
+- **Map Data**: © [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors, licensed under the Open Database License (ODbL)
+- **Tile Generation**: [OpenMapTiles](https://github.com/openmaptiles/openmaptiles) - BSD 3-Clause License
+- **Map Style**: [OSM Liberty](https://github.com/maputnik/osm-liberty) - BSD 3-Clause License
+- **Map Rendering**: [MapLibre GL JS](https://github.com/maplibre/maplibre-gl-js) - BSD 3-Clause License
+- **Pinyin Library**: [pinyin-pro](https://github.com/zh-lx/pinyin-pro) - MIT License
+
+### Attribution
+
+When using or redistributing this project, please include:
+- Attribution to OpenStreetMap contributors: "© OpenStreetMap contributors"
+- Link to this repository (optional but appreciated)
+
+For more details on attribution requirements, see the [LICENSE](LICENSE) file.
+
 ---
 
 Disclaimer: This project is not affiliated with or endorsed by Beijing Normal University-Hong Kong Baptist University United International College (BNBU). It is an independent initiative created to enhance campus navigation and accessibility for the BNBU community.
