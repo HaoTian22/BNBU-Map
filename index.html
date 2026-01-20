@@ -886,6 +886,13 @@
     
     locateButton.classList.remove('locating');
     locateButton.classList.add('active');
+    
+    // GA4: 定位成功（只在首次发送）
+    if (isFirstLocation && typeof gtag !== 'undefined') {
+      gtag('event', 'location_success', {
+        is_high_accuracy: accuracy <= 50
+      });
+    }
   }
   
   function handleLocationError(error) {
@@ -893,16 +900,28 @@
     locateButton.classList.remove('locating', 'active');
     
     let errorMessage = 'Unable to get location / 无法获取位置';
+    let errorType = 'unknown';
     switch(error.code) {
       case error.PERMISSION_DENIED:
         errorMessage = 'Location permission denied / 位置权限被拒绝';
+        errorType = 'permission_denied';
         break;
       case error.POSITION_UNAVAILABLE:
         errorMessage = 'Location unavailable / 位置信息不可用';
+        errorType = 'position_unavailable';
         break;
       case error.TIMEOUT:
         errorMessage = 'Location request timeout / 定位请求超时';
+        errorType = 'timeout';
         break;
+    }
+    
+    // GA4: 定位失败
+    if (typeof gtag !== 'undefined') {
+      gtag('event', 'location_error', {
+        error_type: errorType,
+        error_message: errorMessage
+      });
     }
     
     alert(errorMessage);
@@ -931,6 +950,13 @@
       lastPosition = null; // 重置上次位置
       locateButton.classList.remove('active', 'locating');
       
+      // GA4: 定位停止
+      if (typeof gtag !== 'undefined') {
+        gtag('event', 'location_tracking', {
+          action: 'stop'
+        });
+      }
+      
       // 移除用户位置标记
       if (userLocationMarker) {
         userLocationMarker.remove();
@@ -941,6 +967,13 @@
       isTracking = true;
       isFirstLocation = true; // 重置首次定位标记
       locateButton.classList.add('locating');
+      
+      // GA4: 定位开始
+      if (typeof gtag !== 'undefined') {
+        gtag('event', 'location_tracking', {
+          action: 'start'
+        });
+      }
       
       // 先立即获取一次位置并飞到该位置
       navigator.geolocation.getCurrentPosition(
@@ -1275,6 +1308,14 @@
           <div style="margin-top: 12px; padding-top: 8px; border-top: 1px solid #eee;">
             <button onclick="
               const url = window.location.origin + window.location.pathname + '#map=' + ${map.getZoom().toFixed(2)} + '/' + ${lat.toFixed(6)} + '/' + ${lon.toFixed(6)} + '&poi=${poiId}';
+              if (typeof gtag !== 'undefined') {
+                gtag('event', 'share', {
+                  method: 'copy_link',
+                  content_type: 'poi',
+                  item_id: '${poiId}',
+                  item_name: '${displayName.replace('<br>', ' ').replace(/'/g, "\\'")}'  
+                });
+              }
               navigator.clipboard.writeText(url).then(() => {
                 alert('Link copied! / 链接已复制！');
               }).catch(() => {
@@ -1346,6 +1387,16 @@
           const zoom = map.getZoom();
           const newHash = `#map=${zoom.toFixed(2)}/${center.lat.toFixed(6)}/${center.lng.toFixed(6)}&poi=${poiId}`;
           window.history.replaceState(null, '', newHash);
+          
+          // GA4: POI点击事件
+          if (typeof gtag !== 'undefined') {
+            gtag('event', 'select_poi', {
+              poi_id: poiId,
+              poi_name: displayName.replace('<br>', ' '),
+              poi_category: categoryInfo.label,
+              method: 'marker_click'
+            });
+          }
         });
         
         // 获取类别键名
@@ -1409,6 +1460,13 @@
           searchResults.classList.remove('show');
           searchResults.innerHTML = '';
           return;
+        }
+        
+        // GA4: 搜索事件
+        if (typeof gtag !== 'undefined' && query.length >= 2) {
+          gtag('event', 'search', {
+            search_term: query
+          });
         }
         
         // 搜索匹配项
@@ -1504,6 +1562,16 @@
         const item = e.target.closest('.search-result-item');
         if (item && item.dataset.index) {
           const data = markerData[parseInt(item.dataset.index)];
+          
+          // GA4: 选择搜索结果
+          if (typeof gtag !== 'undefined') {
+            gtag('event', 'select_content', {
+              content_type: 'search_result',
+              item_id: data.poiId,
+              item_name: data.name,
+              item_category: data.categoryLabel
+            });
+          }
           
           // 定位到标记点
           map.flyTo({
@@ -1632,8 +1700,22 @@
 
           if (layerControl.classList.contains('collapsed')) {
             toggleText.textContent = '⚙ Filters / 筛选';
+            
+            // GA4: 面板收起
+            if (typeof gtag !== 'undefined') {
+              gtag('event', 'filter_panel', {
+                action: 'collapse'
+              });
+            }
           } else {
             toggleText.textContent = '✖ Collapse / 隐藏';
+            
+            // GA4: 面板展开
+            if (typeof gtag !== 'undefined') {
+              gtag('event', 'filter_panel', {
+                action: 'expand'
+              });
+            }
           }
         });
       }
@@ -1668,6 +1750,15 @@
           groupStates[group] = !groupStates[group];
           this.classList.toggle('selected');
           updateMarkerVisibility();
+          
+          // GA4: 类别筛选
+          if (typeof gtag !== 'undefined') {
+            gtag('event', 'filter_category', {
+              category: group,
+              category_label: categoryGroups[group].label,
+              action: groupStates[group] ? 'enable' : 'disable'
+            });
+          }
         });
       });
       
@@ -1680,6 +1771,13 @@
           item.classList.add('selected');
         });
         updateMarkerVisibility();
+        
+        // GA4: 全选
+        if (typeof gtag !== 'undefined') {
+          gtag('event', 'filter_action', {
+            action: 'select_all'
+          });
+        }
       });
       
       // Unselect All 按钮
@@ -1691,6 +1789,13 @@
           item.classList.remove('selected');
         });
         updateMarkerVisibility();
+        
+        // GA4: 取消全选
+        if (typeof gtag !== 'undefined') {
+          gtag('event', 'filter_action', {
+            action: 'unselect_all'
+          });
+        }
       });
     })
     .catch(err => {
