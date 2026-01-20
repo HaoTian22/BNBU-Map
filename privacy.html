@@ -79,10 +79,17 @@
       border-radius: 4px;
     }
     
+    .table-wrapper {
+      width: 100%;
+      overflow-x: auto;
+      margin: 20px 0;
+      -webkit-overflow-scrolling: touch;
+    }
+    
     .data-table {
       width: 100%;
       border-collapse: collapse;
-      margin: 20px 0;
+      min-width: 600px;
     }
     
     .data-table th,
@@ -141,6 +148,11 @@
       .data-table {
         font-size: 14px;
       }
+      
+      .table-wrapper {
+        box-shadow: inset 0 0 0 1px #e5e7eb;
+        border-radius: 8px;
+      }
     }
   </style>
 </head>
@@ -161,7 +173,8 @@
     <p>Google Analytics automatically collects the following information when you visit BNBU Map (even without custom events):</p>
     <p>当您访问 BNBU Map 时，Google Analytics 会自动收集以下信息（即使没有自定义事件）：</p>
     
-    <table class="data-table">
+    <div class="table-wrapper">
+      <table class="data-table">
       <thead>
         <tr>
           <th>Data Type<br>数据类型</th>
@@ -206,7 +219,8 @@
           <td>Understand user behavior patterns<br>了解用户行为模式</td>
         </tr>
       </tbody>
-    </table>
+      </table>
+    </div>
     
     <div class="highlight-box">
       <strong>⚠️ Important:</strong> IP addresses are automatically <strong>anonymized</strong> by Google Analytics. Geographic location (country, region, city) is derived from the anonymized IP, not precise GPS coordinates.
@@ -218,7 +232,8 @@
     <p>In addition to the above, we track specific user interactions through custom events:</p>
     <p>除上述数据外，我们通过自定义事件追踪特定的用户交互：</p>
     
-    <table class="data-table">
+    <div class="table-wrapper">
+      <table class="data-table">
       <thead>
         <tr>
           <th>Event Type<br>事件类型</th>
@@ -278,7 +293,8 @@
           <td>Optimize filter interface<br>优化筛选界面</td>
         </tr>
       </tbody>
-    </table>
+      </table>
+    </div>
 
     <h3>1.3 What We DO NOT Collect | 我们不收集的信息</h3>
     <ul>
