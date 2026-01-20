@@ -12,7 +12,7 @@
   </script>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>BNBU 校园地图</title>
+  <title>BNBU Map | BNBU 校园地图</title>
   <link href="https://unpkg.com/maplibre-gl@3.6.0/dist/maplibre-gl.css" rel="stylesheet" />
   <script src="https://unpkg.com/maplibre-gl@3.6.0/dist/maplibre-gl.js"></script>
   <script src="https://unpkg.com/pinyin-pro@3.19.6/dist/index.js"></script>
@@ -626,11 +626,61 @@
   // 初始进度
   updateLoadingProgress(10);
   
+  // 从 URL 或 LocalStorage 读取位置参数
+  function getInitialMapState() {
+    // 默认位置
+    const defaults = {
+      center: [113.514982, 22.354065],
+      zoom: 17,
+      poiId: null
+    };
+    
+    // 优先从 URL 读取参数 (格式: #map=zoom/lat/lng 或 #map=zoom/lat/lng&poi=id)
+    const hash = window.location.hash;
+    if (hash) {
+      const match = hash.match(/#map=([\d.]+)\/([\d.]+)\/([\d.]+)/);
+      if (match) {
+        const zoom = parseFloat(match[1]);
+        const lat = parseFloat(match[2]);
+        const lng = parseFloat(match[3]);
+        
+        // 读取 POI ID
+        const poiMatch = hash.match(/[&?]poi=([^&]+)/);
+        const poiId = poiMatch ? poiMatch[1] : null;
+        
+        if (!isNaN(zoom) && !isNaN(lat) && !isNaN(lng)) {
+          return { center: [lng, lat], zoom, poiId };
+        }
+      }
+    }
+    
+    // 如果 URL 没有参数，从 LocalStorage 读取
+    try {
+      const saved = localStorage.getItem('mapState');
+      if (saved) {
+        const state = JSON.parse(saved);
+        if (state.center && state.zoom) {
+          return { 
+            center: state.center, 
+            zoom: state.zoom,
+            poiId: null 
+          };
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to load map state from localStorage:', e);
+    }
+    
+    return defaults;
+  }
+  
+  const initialState = getInitialMapState();
+  
   const map = new maplibregl.Map({
     container: 'map',
     style: 'https://maptiles.haotian22.top/styles/osm-liberty/style.json',
-    center: [113.514982, 22.354065], // 修改为数据中心点
-    zoom: 17 // 修改为数据支持的缩放级别
+    center: initialState.center,
+    zoom: initialState.zoom
   });
   
   // 监听地图样式加载完成
@@ -655,6 +705,67 @@
     console.log('Map fully loaded');
     updateLoadingProgress(90);
     hideLoadingOverlay();
+  });
+  
+  // 更新 URL 和 LocalStorage
+  function updateMapStateInURL() {
+    const center = map.getCenter();
+    const zoom = map.getZoom();
+    
+    // 保留当前的 POI 参数（如果有）
+    const currentHash = window.location.hash;
+    const poiMatch = currentHash.match(/[&?]poi=([^&]+)/);
+    const poiParam = poiMatch ? '&poi=' + poiMatch[1] : '';
+    
+    // 更新 URL (格式: #map=zoom/lat/lng)
+    const newHash = `#map=${zoom.toFixed(2)}/${center.lat.toFixed(6)}/${center.lng.toFixed(6)}${poiParam}`;
+    window.history.replaceState(null, '', newHash);
+    
+    // 保存到 LocalStorage
+    try {
+      localStorage.setItem('mapState', JSON.stringify({
+        center: [center.lng, center.lat],
+        zoom: zoom
+      }));
+    } catch (e) {
+      console.warn('Failed to save map state to localStorage:', e);
+    }
+  }
+  
+  // 监听地图移动结束事件
+  map.on('moveend', updateMapStateInURL);
+  
+  // 初始化时也更新一次 URL
+  map.once('load', updateMapStateInURL);
+  
+  // 监听URL hash变化（用户在地址栏粘贴新链接时）
+  window.addEventListener('hashchange', function() {
+    const newState = getInitialMapState();
+    
+    // 飞到新位置
+    map.flyTo({
+      center: newState.center,
+      zoom: newState.zoom,
+      duration: 1500
+    });
+    
+    // 如果有POI参数，跳转到对应的POI（在上方函数创建里更改）
+    if (newState.poiId && markerData.length > 0) {
+      const targetPOI = markerData.find(item => String(item.poiId) === String(newState.poiId));
+      if (targetPOI) {
+        setTimeout(() => {
+          map.flyTo({
+            center: targetPOI.lngLat,
+            zoom: 18.5,
+            duration: 2000
+          });
+          
+          setTimeout(() => {
+            targetPOI.marker.togglePopup();
+          }, 1000);
+        }, 500);
+      }
+    }
   });
   
   // 监听首次渲染完成（作为备用检测）
@@ -1055,6 +1166,9 @@
 
         const props = element.tags || {};
         
+        // 获取POI的真实ID
+        const poiId = element.id;
+        
         // 特殊名称处理
         if (props.emergency === 'defibrillator' && !props.name) {
           props['name:en'] = 'AED';
@@ -1156,6 +1270,24 @@
         if (props.note) popupContent += `<p style="margin: 4px 0; color: #666;"><strong>Note / 备注:</strong> ${props.note}</p>`;
         if (props.description) popupContent += `<p style="margin: 4px 0; color: #666;"><strong>Description / 描述:</strong> ${props.description}</p>`;
         
+        // 添加分享按钮
+        popupContent += `
+          <div style="margin-top: 12px; padding-top: 8px; border-top: 1px solid #eee;">
+            <button onclick="
+              const url = window.location.origin + window.location.pathname + '#map=' + ${map.getZoom().toFixed(2)} + '/' + ${lat.toFixed(6)} + '/' + ${lon.toFixed(6)} + '&poi=${poiId}';
+              navigator.clipboard.writeText(url).then(() => {
+                alert('Link copied! / 链接已复制！');
+              }).catch(() => {
+                prompt('Copy this link / 复制此链接:', url);
+              });
+            " style="width: 100%; padding: 8px 12px; background: ${categoryInfo.color}; color: white; border: none; border-radius: 6px; font-size: 12px; cursor: pointer; font-family: Arial, sans-serif; transition: opacity 0.2s;" 
+            onmouseover="this.style.opacity='0.8'" 
+            onmouseout="this.style.opacity='1'">
+              📋 Copy Share Link / 复制分享链接
+            </button>
+          </div>
+        `;
+        
         popupContent += '</div>';
 
         const popup = new maplibregl.Popup().setHTML(popupContent);
@@ -1191,6 +1323,14 @@
           .setPopup(popup)
           .addTo(map);
         
+        // 标记点添加点击事件以更新URL
+        marker.getElement().addEventListener('click', () => {
+          const center = map.getCenter();
+          const zoom = map.getZoom();
+          const newHash = `#map=${zoom.toFixed(2)}/${center.lat.toFixed(6)}/${center.lng.toFixed(6)}&poi=${poiId}`;
+          window.history.replaceState(null, '', newHash);
+        });
+        
         // 获取类别键名
         const categoryKey = Object.keys(categoryColors).find(key => 
           categoryColors[key].color === categoryInfo.color && 
@@ -1215,9 +1355,31 @@
           shortNamePinyin: getPinyin(props.short_name || ''),
           categoryLabel: categoryInfo.label,
           lngLat: [lon, lat],
-          props: props
+          props: props,
+          poiId: poiId
         });
       });
+      
+      // 如果 URL 中有 POI 参数，自动打开对应的标记
+      if (initialState.poiId) {
+        // 转换为字符串进行比较（因为URL中是字符串）
+        const targetPOI = markerData.find(item => String(item.poiId) === String(initialState.poiId));
+        if (targetPOI) {
+          setTimeout(() => {
+            // 飞到目标位置
+            map.flyTo({
+              center: targetPOI.lngLat,
+              zoom: 18.5,
+              duration: 2000
+            });
+            
+            // 打开 popup
+            setTimeout(() => {
+              targetPOI.marker.togglePopup();
+            }, 1500);
+          }, 1000);
+        }
+      }
       
       // 搜索功能
       const searchInput = document.getElementById('search-input');
@@ -1329,7 +1491,7 @@
           // 定位到标记点
           map.flyTo({
             center: data.lngLat,
-            zoom: 19,
+            zoom: 18.5,
             duration: 2000
           });
           
