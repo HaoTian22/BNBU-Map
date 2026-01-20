@@ -1817,10 +1817,10 @@
           // GA4: 选择搜索结果
           if (typeof gtag !== 'undefined') {
             gtag('event', 'select_content', {
-              content_type: 'search_result',
-              item_id: data.poiId,
-              item_name: data.name,
-              item_category: data.categoryLabel
+              method: 'search',
+              poi_id: data.poiId,
+              poi_name: data.name,
+              poi_category: data.categoryLabel
             });
           }
           
