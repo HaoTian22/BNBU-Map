@@ -1453,20 +1453,35 @@
       const searchInput = document.getElementById('search-input');
       const searchResults = document.getElementById('search-results');
       
+      // 防抖定时器，避免频繁上报搜索事件
+      let searchDebounceTimer = null;
+      
       searchInput.addEventListener('input', function() {
         const query = this.value.toLowerCase().trim();
         
         if (query.length === 0) {
           searchResults.classList.remove('show');
           searchResults.innerHTML = '';
+          // 清除防抖定时器
+          if (searchDebounceTimer) {
+            clearTimeout(searchDebounceTimer);
+            searchDebounceTimer = null;
+          }
           return;
         }
         
-        // GA4: 搜索事件
+        // GA4: 搜索事件（防抖：用户停止输入1.5秒后才上报）
         if (typeof gtag !== 'undefined' && query.length >= 2) {
-          gtag('event', 'search', {
-            search_term: query
-          });
+          // 清除之前的定时器
+          if (searchDebounceTimer) {
+            clearTimeout(searchDebounceTimer);
+          }
+          // 设置新的定时器
+          searchDebounceTimer = setTimeout(() => {
+            gtag('event', 'search', {
+              search_term: query
+            });
+          }, 1500); // 1.5秒后上报
         }
         
         // 搜索匹配项
