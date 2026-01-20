@@ -779,18 +779,6 @@
     
     // 加载Google Analytics
     loadGoogleAnalytics();
-    
-    // 等待GA加载完成后发送同意事件
-    setTimeout(() => {
-      if (typeof gtag !== 'undefined') {
-        gtag('consent', 'update', {
-          'analytics_storage': 'granted'
-        });
-        gtag('event', 'cookie_consent', {
-          action: 'accept'
-        });
-      }
-    }, 500);
   });
   
   // 处理拒绝按钮
