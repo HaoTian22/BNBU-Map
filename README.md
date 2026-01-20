@@ -8,12 +8,16 @@ Demo available at: https://u-map.haotian22.top
 
 Features include:
 - Interactive campus map with zoom and pan capabilities.
+- 3D Building support
 - Search functionality for buildings, facilities, and points of interest.
 - Layer control to toggle different map features.
 - User real-time location viewing.
 - Mobile-friendly design for use on smartphones and tablets.
 - Fantastic Animations (you should really try it!)
-- Beautiful Arclic UI
+- Beautiful Acrylic UI
+
+<img width="2488" height="1421" alt="image" src="https://github.com/user-attachments/assets/2e67a00b-6643-4cf6-b852-9559dd854acb" />
+
 
 ## Data Update Schedule
 
