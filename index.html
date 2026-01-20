@@ -1292,6 +1292,23 @@
 
         const popup = new maplibregl.Popup().setHTML(popupContent);
         
+        // 监听popup关闭事件，延迟移除URL中的poi参数
+        popup.on('close', () => {
+          // 延迟50ms检查，如果是切换到另一个POI，URL已经被更新，就不要移除poi参数
+          setTimeout(() => {
+            const currentHash = window.location.hash;
+            // 如果当前URL中还有poi参数，说明是切换到了另一个POI，不要移除
+            if (currentHash.includes('&poi=')) {
+              return;
+            }
+            // 否则移除poi参数
+            const center = map.getCenter();
+            const zoom = map.getZoom();
+            const newHash = `#map=${zoom.toFixed(2)}/${center.lat.toFixed(6)}/${center.lng.toFixed(6)}`;
+            window.history.replaceState(null, '', newHash);
+          }, 50);
+        });
+        
         // 保存原始的remove方法
         const originalRemove = popup.remove.bind(popup);
         let isClosing = false;
