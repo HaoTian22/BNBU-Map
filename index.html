@@ -1,15 +1,6 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <!-- Google tag (gtag.js) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-8B9JZM35BP"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-
-    gtag('config', 'G-8B9JZM35BP');
-  </script>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>BNBU Map | BNBU 校园地图</title>
@@ -729,6 +720,28 @@
 <script>
   // Cookie同意管理
   let analyticsConsent = false;
+  let gaScriptLoaded = false;
+  
+  // 动态加载Google Analytics脚本
+  function loadGoogleAnalytics() {
+    if (gaScriptLoaded) return;
+    
+    // 创建gtag.js脚本
+    const script = document.createElement('script');
+    script.async = true;
+    script.src = 'https://www.googletagmanager.com/gtag/js?id=G-8B9JZM35BP';
+    document.head.appendChild(script);
+    
+    // 初始化gtag
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    window.gtag = gtag;
+    gtag('js', new Date());
+    gtag('config', 'G-8B9JZM35BP');
+    
+    gaScriptLoaded = true;
+    console.log('Google Analytics loaded');
+  }
   
   // 检查用户是否已做出选择
   function checkAnalyticsConsent() {
@@ -738,7 +751,14 @@
       document.getElementById('cookie-consent').classList.add('show');
       return false;
     }
-    return consent === 'true';
+    
+    // 如果之前同意过，自动加载GA
+    if (consent === 'true') {
+      loadGoogleAnalytics();
+      return true;
+    }
+    
+    return false;
   }
   
   // 初始化时检查同意状态
@@ -757,15 +777,20 @@
       cookieConsent.classList.remove('show', 'closing');
     }, 800);
     
-    // 发送同意事件
-    if (typeof gtag !== 'undefined') {
-      gtag('consent', 'update', {
-        'analytics_storage': 'granted'
-      });
-      gtag('event', 'cookie_consent', {
-        action: 'accept'
-      });
-    }
+    // 加载Google Analytics
+    loadGoogleAnalytics();
+    
+    // 等待GA加载完成后发送同意事件
+    setTimeout(() => {
+      if (typeof gtag !== 'undefined') {
+        gtag('consent', 'update', {
+          'analytics_storage': 'granted'
+        });
+        gtag('event', 'cookie_consent', {
+          action: 'accept'
+        });
+      }
+    }, 500);
   });
   
   // 处理拒绝按钮
@@ -781,21 +806,8 @@
       cookieConsent.classList.remove('show', 'closing');
     }, 800);
     
-    // 发送拒绝事件（这是最后一次GA调用）
-    if (typeof gtag !== 'undefined') {
-      gtag('consent', 'update', {
-        'analytics_storage': 'denied'
-      });
-    }
+    // 不加载GA脚本，不发送任何事件
   });
-  
-  // 包装gtag函数，只在用户同意时才发送事件
-  const originalGtag = window.gtag;
-  window.gtag = function() {
-    if (analyticsConsent && typeof originalGtag === 'function') {
-      originalGtag.apply(this, arguments);
-    }
-  };
   
   // 加载进度管理
   let pbfLoadDetected = false;
