@@ -21,22 +21,41 @@ echo ""
 # 读取Overpass查询内容
 QUERY=$(cat Overpass.txt)
 
-# 使用 curl 发送 POST 请求到临时文件
-curl -X POST \
-  "$OVERPASS_API" \
-  -H "Content-Type: application/x-www-form-urlencoded" \
-  --data-urlencode "data=$QUERY" \
-  -o "$TEMP_FILE" \
-  --silent --show-error \
-  --max-time 60
+# 重试配置
+MAX_RETRIES=3
+RETRY_DELAY=10
 
-# 检查curl是否执行成功
-if [ $? -ne 0 ]; then
-  echo "[$TIMESTAMP] ✗ 网络请求失败！"
-  echo "[$TIMESTAMP] 请检查网络连接或 Overpass API 是否可用"
-  rm -f "$TEMP_FILE"
-  exit 1
-fi
+# 使用循环进行重试
+for attempt in $(seq 1 $MAX_RETRIES); do
+  echo "[$TIMESTAMP] 尝试获取数据 (第 $attempt 次)..."
+  
+  # 使用 curl 发送 POST 请求到临时文件
+  curl -X POST \
+    "$OVERPASS_API" \
+    -H "Content-Type: application/x-www-form-urlencoded" \
+    --data-urlencode "data=$QUERY" \
+    -o "$TEMP_FILE" \
+    --silent --show-error \
+    --max-time 60
+
+  # 检查curl是否执行成功
+  if [ $? -eq 0 ]; then
+    echo "[$TIMESTAMP] ✓ 网络请求成功"
+    break
+  else
+    echo "[$TIMESTAMP] ✗ 网络请求失败 (第 $attempt 次)"
+    
+    if [ $attempt -lt $MAX_RETRIES ]; then
+      echo "[$TIMESTAMP] 等待 ${RETRY_DELAY} 秒后重试..."
+      sleep $RETRY_DELAY
+    else
+      echo "[$TIMESTAMP] ✗ 已达到最大重试次数 ($MAX_RETRIES 次)，放弃操作"
+      echo "[$TIMESTAMP] 请检查网络连接或 Overpass API 是否可用"
+      rm -f "$TEMP_FILE"
+      exit 1
+    fi
+  fi
+done
 
 # 检查文件是否存在且不为空
 if [ ! -f "$TEMP_FILE" ] || [ ! -s "$TEMP_FILE" ]; then
