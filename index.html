@@ -798,23 +798,108 @@
   });
   
   // 加载进度管理
-  let pbfLoadDetected = false;
-  let styleLoaded = false;
-  let tilesLoaded = false;
   const loadingOverlay = document.getElementById('loading-overlay');
   const loadingProgress = document.getElementById('loading-progress');
+  const loadingText = document.querySelector('.loading-text');
+  const loadingSubtext = document.querySelector('.loading-subtext');
   
-  // 更新加载进度
-  function updateLoadingProgress(progress) {
+  // 资源加载跟踪
+  const resourceTracker = {
+    styleJson: { loaded: false, weight: 15 },      // 样式JSON文件
+    fonts: { count: 0, loaded: 0, weight: 10 },    // 字体文件
+    sprites: { count: 0, loaded: 0, weight: 10 },  // Sprite图像
+    pbfTiles: { count: 0, loaded: 0, weight: 50 }, // PBF瓦片
+    mapIdle: { loaded: false, weight: 15 }         // 地图idle状态
+  };
+  
+  // 更新加载进度和文本
+  function updateLoadingProgress(progress, statusText = null, subText = null) {
     if (loadingProgress) {
-      loadingProgress.style.width = progress + '%';
+      loadingProgress.style.width = Math.min(progress, 100) + '%';
+    }
+    if (statusText && loadingText) {
+      loadingText.textContent = statusText;
+    }
+    if (subText && loadingSubtext) {
+      loadingSubtext.textContent = subText;
+    }
+  }
+  
+  // 计算总进度
+  function calculateTotalProgress() {
+    let totalProgress = 0;
+    
+    // 样式JSON加载
+    if (resourceTracker.styleJson.loaded) {
+      totalProgress += resourceTracker.styleJson.weight;
+    }
+    
+    // 字体加载进度
+    if (resourceTracker.fonts.count > 0) {
+      const fontProgress = (resourceTracker.fonts.loaded / resourceTracker.fonts.count) * resourceTracker.fonts.weight;
+      totalProgress += fontProgress;
+    }
+    
+    // Sprite加载进度
+    if (resourceTracker.sprites.count > 0) {
+      const spriteProgress = (resourceTracker.sprites.loaded / resourceTracker.sprites.count) * resourceTracker.sprites.weight;
+      totalProgress += spriteProgress;
+    }
+    
+    // PBF瓦片加载进度
+    if (resourceTracker.pbfTiles.count > 0) {
+      const tileProgress = (resourceTracker.pbfTiles.loaded / resourceTracker.pbfTiles.count) * resourceTracker.pbfTiles.weight;
+      totalProgress += tileProgress;
+    }
+    
+    // 地图idle状态
+    if (resourceTracker.mapIdle.loaded) {
+      totalProgress += resourceTracker.mapIdle.weight;
+    }
+    
+    return Math.min(totalProgress, 100);
+  }
+  
+  // 更新状态文本
+  function updateStatusText() {
+    const { styleJson, fonts, sprites, pbfTiles, mapIdle } = resourceTracker;
+    
+    if (mapIdle.loaded) {
+      updateLoadingProgress(100, 'Map Ready / 地图就绪', 'Almost there / 即将完成');
+    } else if (pbfTiles.count > 0 && pbfTiles.loaded > 0) {
+      const tilePercent = Math.floor((pbfTiles.loaded / pbfTiles.count) * 100);
+      updateLoadingProgress(
+        calculateTotalProgress(),
+        'Loading Map Tiles / 加载地图瓦片',
+        `${pbfTiles.loaded}/${pbfTiles.count} tiles loaded (${tilePercent}%) / 已加载瓦片`
+      );
+    } else if (sprites.count > 0 && sprites.loaded < sprites.count) {
+      updateLoadingProgress(
+        calculateTotalProgress(),
+        'Loading Icons / 加载图标',
+        `Loading sprite images / 正在加载图标资源`
+      );
+    } else if (fonts.count > 0 && fonts.loaded < fonts.count) {
+      updateLoadingProgress(
+        calculateTotalProgress(),
+        'Loading Fonts / 加载字体',
+        `${fonts.loaded}/${fonts.count} fonts loaded / 已加载字体`
+      );
+    } else if (styleJson.loaded) {
+      updateLoadingProgress(
+        calculateTotalProgress(),
+        'Preparing Map / 准备地图',
+        'Loading map resources / 正在加载地图资源'
+      );
+    } else {
+      updateLoadingProgress(5, 'Initializing / 初始化中', 'Connecting to server / 连接服务器');
     }
   }
   
   // 隐藏加载条
   function hideLoadingOverlay() {
     if (loadingOverlay && !loadingOverlay.classList.contains('fade-out')) {
-      updateLoadingProgress(100);
+      updateLoadingProgress(100, 'Map Ready / 地图就绪', 'Loading complete / 加载完成');
       setTimeout(() => {
         loadingOverlay.classList.add('fade-out');
         setTimeout(() => {
@@ -824,34 +909,80 @@
     }
   }
   
-  // 监听网络请求以检测pbf文件加载
+  // 监听网络请求以检测资源加载
   const originalFetch = window.fetch;
-  let pbfRequestCount = 0;
-  let pbfLoadedCount = 0;
   
   window.fetch = function(...args) {
-    const url = args[0];
+    const url = typeof args[0] === 'string' ? args[0] : args[0]?.url || '';
     
-    // 检测pbf文件请求
-    if (typeof url === 'string' && url.includes('.pbf')) {
-      pbfRequestCount++;
-      pbfLoadDetected = true;
-      
+    // 检测样式JSON文件
+    if (url.includes('style.json')) {
+      console.log('Loading style.json:', url);
       return originalFetch.apply(this, args).then(response => {
         if (response.ok) {
-          pbfLoadedCount++;
-          // 更新进度（pbf加载占60%）
-          const pbfProgress = Math.min((pbfLoadedCount / Math.max(pbfRequestCount, 1)) * 60, 60);
-          updateLoadingProgress(pbfProgress);
-          
-          // 如果第一个pbf文件加载完成
-          if (pbfLoadedCount === 1) {
-            console.log('First pbf tile loaded');
-          }
+          resourceTracker.styleJson.loaded = true;
+          console.log('✓ Style JSON loaded');
+          updateStatusText();
         }
         return response;
       }).catch(error => {
-        console.error('Error loading pbf:', error);
+        console.error('Error loading style.json:', error);
+        return Promise.reject(error);
+      });
+    }
+    
+    // 检测字体文件
+    if (url.includes('fonts') || url.match(/\.(pbf|ttf|woff|woff2)$/)) {
+      if (!url.includes('tiles')) { // 排除瓦片pbf
+        resourceTracker.fonts.count++;
+        console.log(`Loading font: ${url.split('/').pop()}`);
+        return originalFetch.apply(this, args).then(response => {
+          if (response.ok) {
+            resourceTracker.fonts.loaded++;
+            console.log(`✓ Font loaded (${resourceTracker.fonts.loaded}/${resourceTracker.fonts.count})`);
+            updateStatusText();
+          }
+          return response;
+        }).catch(error => {
+          console.error('Error loading font:', error);
+          return Promise.reject(error);
+        });
+      }
+    }
+    
+    // 检测sprite图像
+    if (url.includes('sprite') && (url.includes('.png') || url.includes('.json'))) {
+      resourceTracker.sprites.count++;
+      const fileType = url.includes('.png') ? 'PNG' : 'JSON';
+      console.log(`Loading sprite ${fileType}:`, url.split('/').pop());
+      return originalFetch.apply(this, args).then(response => {
+        if (response.ok) {
+          resourceTracker.sprites.loaded++;
+          console.log(`✓ Sprite ${fileType} loaded (${resourceTracker.sprites.loaded}/${resourceTracker.sprites.count})`);
+          updateStatusText();
+        }
+        return response;
+      }).catch(error => {
+        console.error('Error loading sprite:', error);
+        return Promise.reject(error);
+      });
+    }
+    
+    // 检测PBF瓦片文件
+    if (url.includes('tiles') && url.includes('.pbf')) {
+      resourceTracker.pbfTiles.count++;
+      const tileCoords = url.match(/(\d+)\/(\d+)\/(\d+)\.pbf/);
+      const tileName = tileCoords ? `${tileCoords[1]}/${tileCoords[2]}/${tileCoords[3]}` : 'tile';
+      
+      return originalFetch.apply(this, args).then(response => {
+        if (response.ok) {
+          resourceTracker.pbfTiles.loaded++;
+          console.log(`✓ Tile loaded: ${tileName} (${resourceTracker.pbfTiles.loaded}/${resourceTracker.pbfTiles.count})`);
+          updateStatusText();
+        }
+        return response;
+      }).catch(error => {
+        console.error('Error loading tile:', error);
         return Promise.reject(error);
       });
     }
@@ -860,7 +991,7 @@
   };
   
   // 初始进度
-  updateLoadingProgress(10);
+  updateLoadingProgress(5, 'Initializing / 初始化中', 'Starting map engine / 启动地图引擎');
   
   // 从 URL 或 LocalStorage 读取位置参数
   function getInitialMapState() {
@@ -919,28 +1050,22 @@
     zoom: initialState.zoom
   });
   
-  // 监听地图样式加载完成
+  // 监听地图样式加载完成（MapLibre事件）
   map.on('styledata', function() {
-    if (!styleLoaded) {
-      styleLoaded = true;
-      updateLoadingProgress(30);
-      console.log('Map style loaded');
-    }
+    console.log('Map styledata event fired');
   });
   
   // 监听地图数据加载（包括瓦片）
   map.on('data', function(e) {
-    if (e.isSourceLoaded && pbfLoadDetected && !tilesLoaded) {
-      tilesLoaded = true;
-      updateLoadingProgress(80);
+    if (e.dataType === 'source' && e.isSourceLoaded) {
+      console.log('Source loaded:', e.sourceId);
     }
   });
   
   // 监听地图完全加载完成
   map.on('load', function() {
-    console.log('Map fully loaded');
-    updateLoadingProgress(90);
-    hideLoadingOverlay();
+    console.log('Map load event fired');
+    // 不在这里隐藏加载条，等待idle事件
   });
   
   // 更新 URL 和 LocalStorage
@@ -1004,11 +1129,19 @@
     }
   });
   
-  // 监听首次渲染完成（作为备用检测）
+  // 监听首次渲染完成
+  let idleFired = false;
   map.on('idle', function() {
-    if (!tilesLoaded) {
-      tilesLoaded = true;
-      hideLoadingOverlay();
+    if (!idleFired) {
+      idleFired = true;
+      resourceTracker.mapIdle.loaded = true;
+      console.log('Map idle - all visible tiles loaded');
+      updateStatusText();
+      
+      // 延迟隐藏加载条，让用户看到100%
+      setTimeout(() => {
+        hideLoadingOverlay();
+      }, 500);
     }
   });
   
@@ -1018,7 +1151,7 @@
       console.warn('Loading timeout, hiding overlay');
       hideLoadingOverlay();
     }
-  }, 15000);
+  }, 25000);
   
   // 定位功能
   let userLocationMarker = null;
