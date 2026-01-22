@@ -18,11 +18,6 @@ echo "[$TIMESTAMP] 查询内容来自: Overpass.txt"
 echo "[$TIMESTAMP] 输出文件: $OUTPUT_FILE"
 echo ""
 
-echo "[$TIMESTAMP] 正在从 Overpass API 获取数据..."
-echo "[$TIMESTAMP] 查询内容来自: Overpass.txt"
-echo "[$TIMESTAMP] 输出文件: $OUTPUT_FILE"
-echo ""
-
 # 读取Overpass查询内容
 QUERY=$(cat Overpass.txt)
 
