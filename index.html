@@ -45,13 +45,29 @@
       border-radius: 20px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.2);
       margin-top: 6px;
+      height: 0;
       max-height: 300px;
-      overflow-y: auto;
-      display: none;
+      overflow: hidden;
+      opacity: 0;
+      transform: translateY(-10px) scale(0.95);
+      transition: height 0.8s cubic-bezier(0.4, 0, 0.2, 1), 
+                  opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+                  transform 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+                  box-shadow 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+                  overflow 0s 0.5s;
+      will-change: height, opacity, transform;
     }
     
     .search-results.show {
-      display: block;
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      overflow-y: auto;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+      transition: height 0.8s cubic-bezier(0.4, 0, 0.2, 1), 
+                  opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+                  transform 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+                  box-shadow 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+                  overflow 0s 0s;
     }
     
     .search-result-item {
@@ -63,6 +79,27 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+      opacity: 0;
+      transform: translateX(-10px);
+      animation: fadeInSlide 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+    
+    .search-result-item:nth-child(1) { animation-delay: 0s; }
+    .search-result-item:nth-child(2) { animation-delay: 0.05s; }
+    .search-result-item:nth-child(3) { animation-delay: 0.1s; }
+    .search-result-item:nth-child(4) { animation-delay: 0.15s; }
+    .search-result-item:nth-child(5) { animation-delay: 0.2s; }
+    .search-result-item:nth-child(6) { animation-delay: 0.25s; }
+    .search-result-item:nth-child(7) { animation-delay: 0.3s; }
+    .search-result-item:nth-child(8) { animation-delay: 0.35s; }
+    .search-result-item:nth-child(9) { animation-delay: 0.4s; }
+    .search-result-item:nth-child(10) { animation-delay: 0.45s; }
+    
+    @keyframes fadeInSlide {
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
     }
     
     .search-result-item:last-child {
@@ -71,17 +108,20 @@
     
     .search-result-item:hover {
       background: #f5f5f5;
+      transition: background 0.2s ease;
     }
     
     .search-result-name {
       font-weight: bold;
       color: #333;
       margin-bottom: 3px;
+      transition: color 0.2s ease;
     }
     
     .search-result-category {
       font-size: 12px;
       color: #666;
+      transition: color 0.2s ease;
     }
     
     .search-result-info {
@@ -94,6 +134,7 @@
       font-weight: 500;
       margin-left: 10px;
       white-space: nowrap;
+      transition: color 0.2s ease;
     }
     
     /* 图层控制面板样式 */
@@ -1830,12 +1871,62 @@
       // 防抖定时器，避免频繁上报搜索事件
       let searchDebounceTimer = null;
       
+      // 更新搜索结果高度的函数
+      function updateSearchResultsHeight(isHiding = false) {
+        if (isHiding) {
+          // 隐藏时：先获取当前高度，然后在下一帧设置为 0
+          const currentHeight = searchResults.offsetHeight;
+          searchResults.style.height = currentHeight + 'px';
+          requestAnimationFrame(() => {
+            searchResults.style.height = '0px';
+          });
+        } else {
+          // 显示时：获取当前实际高度
+          const currentHeight = searchResults.offsetHeight;
+          
+          // 临时移除 height 限制以获取真实内容高度
+          const originalHeight = searchResults.style.height;
+          searchResults.style.height = 'auto';
+          const contentHeight = searchResults.scrollHeight;
+          
+          // 限制最大高度为 300px
+          const targetHeight = Math.min(contentHeight, 300);
+          
+          // 恢复当前高度
+          searchResults.style.height = currentHeight + 'px';
+          
+          // 强制重排以确保动画触发
+          searchResults.offsetHeight;
+          
+          // 在下一帧设置目标高度，触发动画
+          requestAnimationFrame(() => {
+            searchResults.style.height = targetHeight + 'px';
+          });
+        }
+      }
+      
+      // 点击搜索框时，如果有内容则重新显示结果面板
+      searchInput.addEventListener('focus', function() {
+        const query = this.value.toLowerCase().trim();
+        // 如果有搜索内容且结果面板有内容，则显示
+        if (query.length > 0 && searchResults.innerHTML.trim() !== '') {
+          searchResults.classList.add('show');
+          requestAnimationFrame(() => {
+            updateSearchResultsHeight();
+          });
+        }
+      });
+      
       searchInput.addEventListener('input', function() {
         const query = this.value.toLowerCase().trim();
         
         if (query.length === 0) {
           searchResults.classList.remove('show');
-          searchResults.innerHTML = '';
+          updateSearchResultsHeight(true);
+          // 等动画结束后再清空内容
+          setTimeout(() => {
+            searchResults.innerHTML = '';
+          }, 400);
           // 清除防抖定时器
           if (searchDebounceTimer) {
             clearTimeout(searchDebounceTimer);
@@ -1940,9 +2031,16 @@
             `;
           }).join('');
           searchResults.classList.add('show');
+          // 使用 requestAnimationFrame 确保 DOM 更新后再计算高度
+          requestAnimationFrame(() => {
+            updateSearchResultsHeight();
+          });
         } else {
           searchResults.innerHTML = '<div class="search-result-item">No results / 无结果</div>';
           searchResults.classList.add('show');
+          requestAnimationFrame(() => {
+            updateSearchResultsHeight();
+          });
         }
       });
       
@@ -1977,14 +2075,20 @@
           // 清空搜索
           searchInput.value = '';
           searchResults.classList.remove('show');
-          searchResults.innerHTML = '';
+          updateSearchResultsHeight(true);
+          setTimeout(() => {
+            searchResults.innerHTML = '';
+          }, 400);
         }
       });
       
       // 点击地图其他地方关闭搜索结果
       document.addEventListener('click', function(e) {
         if (!e.target.closest('.search-container')) {
-          searchResults.classList.remove('show');
+          if (searchResults.classList.contains('show')) {
+            searchResults.classList.remove('show');
+            updateSearchResultsHeight(true);
+          }
         }
       });
       
