@@ -108,7 +108,7 @@
       border-radius: 30px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.2);
       max-height: 80vh;
-      overflow-y: auto;
+      /* overflow-y: auto; */
       z-index: 1000;
       font-family: Arial, sans-serif;
       min-width: 250px;
@@ -199,6 +199,11 @@
       opacity: 0;
       transition: max-height 1s cubic-bezier(0.4, 0, 0.2, 1), 
                   opacity 0.7s ease-in-out;
+    }
+
+    .layer-control-content #category-list {
+      overflow-y: auto;
+      scrollbar-width: none;
     }
     
     .layer-toggle-btn {
@@ -1988,6 +1993,7 @@
       const layerToggle = document.getElementById('layer-toggle');
       const toggleText = document.getElementById('toggle-text');
       const layerControlContent = document.querySelector('.layer-control-content');
+      const layerControlContentList = document.getElementById('category-list');
       
       // 检测是否为移动端
       function isMobile() {
@@ -2013,43 +2019,45 @@
           
           // 强制重排以确保样式生效
           layerControlContent.offsetHeight;
+          // 计算category-list可用空间：考虑移动端和桌面端的差异
+          const mobile = isMobile();
+          let maxAllowedHeight;
+
+          const controlButtons = layerControl.querySelector('.control-buttons');
+          const heading = layerControl.querySelector('.layer-control h3');
+          const filterButtons = layerControl.querySelector('.filter-buttons');
+          const attribution = layerControl.querySelector('.osm-attribution');
+          const feedback = layerControl.querySelector('.feedback-note');
+          const buttonsHeight = controlButtons ? (s => controlButtons.offsetHeight + parseFloat(s.marginTop) + parseFloat(s.marginBottom))(getComputedStyle(controlButtons)) : 0;
+          const headingHeight = heading ? (s => heading.offsetHeight + parseFloat(s.marginTop) + parseFloat(s.marginBottom))(getComputedStyle(heading)) : 0;
+          const filterButtonsHeight = filterButtons ? (s => filterButtons.offsetHeight + parseFloat(s.marginTop) + parseFloat(s.marginBottom))(getComputedStyle(filterButtons)) : 0;
+          const attributionHeight = attribution ? (s => attribution.offsetHeight + parseFloat(s.marginTop) + parseFloat(s.marginBottom))(getComputedStyle(attribution)) : 0;
+          const feedbackHeight = feedback ? (s => feedback.offsetHeight + parseFloat(s.marginTop) + parseFloat(s.marginBottom))(getComputedStyle(feedback)) : 0;
+          if (mobile) {
+            // 移动端：.layer-control 限制为 65vh，需要减去按钮、padding等的高度
+            const padding = 10 * 2; // 移动端 padding: 10px
+            
+            maxAllowedHeight = window.innerHeight * 0.65 - buttonsHeight - headingHeight - filterButtonsHeight -
+                             attributionHeight - feedbackHeight - padding;
+          } else {
+            // 桌面端：.layer-control 限制为 80vh
+            const padding = 15 * 2; // 桌面端 padding: 15px
+            
+            maxAllowedHeight = window.innerHeight * 0.8 - buttonsHeight - headingHeight - filterButtonsHeight -
+                             attributionHeight - feedbackHeight - padding;
+          }
+          
+          // 设置category-list的max-height
+          layerControlContentList.style.maxHeight = maxAllowedHeight + 'px';
+
+          // 计算实际内容高度
+
           
           // 测量实际高度
           const actualHeight = layerControlContent.scrollHeight;
-          
-          // 计算可用空间：考虑移动端和桌面端的差异
-          const mobile = isMobile();
-          let maxAllowedHeight;
-          
-          if (mobile) {
-            // 移动端：.layer-control 限制为 60vh，需要减去按钮、padding等的高度
-            const controlButtons = layerControl.querySelector('.control-buttons');
-            const buttonsHeight = controlButtons ? controlButtons.offsetHeight : 0;
-            const padding = 10 * 2; // 移动端 padding: 10px
-            const margins = 10; // 按钮和内容之间的margin
-            
-            maxAllowedHeight = window.innerHeight * 0.65 - buttonsHeight - padding - margins;
-          } else {
-            // 桌面端：.layer-control 限制为 80vh
-            const controlButtons = layerControl.querySelector('.control-buttons');
-            const heading = layerControl.querySelector('h3');
-            const attribution = layerControl.querySelector('.osm-attribution');
-            const feedback = layerControl.querySelector('.feedback-note');
-            
-            const buttonsHeight = controlButtons ? controlButtons.offsetHeight : 0;
-            const headingHeight = heading ? heading.offsetHeight : 0;
-            const attributionHeight = attribution ? attribution.offsetHeight : 0;
-            const feedbackHeight = feedback ? feedback.offsetHeight : 0;
-            const padding = 15 * 2; // 桌面端 padding: 15px
-            const margins = 20; // 各元素之间的间距
-            
-            maxAllowedHeight = window.innerHeight * 0.8 - buttonsHeight - headingHeight - 
-                             attributionHeight - feedbackHeight - padding - margins;
-          }
-          
-          // 设置max-height为实际高度和允许的最大高度中的较小值
-          const finalHeight = Math.min(actualHeight, maxAllowedHeight);
-          layerControlContent.style.maxHeight = finalHeight + 'px';
+
+          layerControlContent.style.maxHeight = actualHeight + 'px';
+          console.log('Updated layer control content max-height to:', layerControlContent.style.maxHeight);
           
           // 如果之前是收起状态，立即恢复收起（在恢复过渡之前）
           if (wasCollapsed) {
