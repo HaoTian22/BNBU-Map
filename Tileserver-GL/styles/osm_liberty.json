@@ -1335,6 +1335,7 @@
       "source": "openmaptiles",
       "source-layer": "building",
       "minzoom": 14,
+      "filter": ["all",["!has", "hide_3d"]],
       "paint": {
         "fill-extrusion-color": "hsl(35, 8%, 85%)",
         "fill-extrusion-height": {
