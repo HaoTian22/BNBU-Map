@@ -343,6 +343,32 @@
     .locate-button.active:active {
       background: #1e40af;
     }
+
+    /* 用户位置标记（带方向箭头） */
+    .user-marker {
+      width: 12px;
+      height: 12px;
+      background-color: #2196F3;
+      border-radius: 50%;
+      border: 2px solid white;
+      box-shadow: 0 0 4px rgba(0,0,0,0.3);
+      position: relative;
+    }
+  .user-marker::after {
+    content: '';
+    position: absolute;
+    top: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 8px;
+    height: 6px;
+    /* 使用一段简单的 SVG 路径：M（起点）, Q（二次贝塞尔曲线/圆角）, L（直线） */
+    background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 18"><path d="M2,18 L10.6,2.4 C11.3,1.1 12.7,1.1 13.4,2.4 L22,18 Z" fill="%232196F3"/></svg>') no-repeat center;
+    background-size: contain;
+  }
+    .user-marker.no-compass::after {
+      display: none;
+    }
     
     .locate-button.locating {
       animation: pulse 1.5s infinite;
@@ -1255,27 +1281,24 @@
     if (userLocationMarker) {
       userLocationMarker.setLngLat([longitude, latitude]);
     } else {
-      // 创建用户位置标记（蓝色圆点）
-      const el = document.createElement('div');
-      el.id = 'user-location-marker';
-      el.innerHTML = `
-        <svg width="40" height="40" viewBox="0 0 40 40" style="display: block;">
-          <!-- 外圈光晕 -->
-          <circle cx="20" cy="20" r="18" fill="rgba(37, 99, 235, 0.15)" />
-          <!-- 内圈 -->
-          <circle cx="20" cy="20" r="12" fill="#2563EB" stroke="white" stroke-width="3" />
-        </svg>
-      `;
-      el.style.width = '40px';
-      el.style.height = '40px';
-      el.style.cursor = 'pointer';
-      
-      userLocationMarker = new maplibregl.Marker({ 
-        element: el,
+      // 创建自定义带方向箭头的 Marker
+      const markerEl = document.createElement('div');
+      markerEl.className = 'user-marker no-compass'; // 默认隐藏指针，等罗盘数据到来再显示
+
+      userLocationMarker = new maplibregl.Marker({
+        element: markerEl,
+        rotationAlignment: 'map',
+        pitchAlignment: 'map',
         anchor: 'center'
       })
         .setLngLat([longitude, latitude])
         .addTo(map);
+    }
+
+    // 更新方向（如果 GPS 提供了移动方向）
+    if (position.coords.heading !== null && !isNaN(position.coords.heading)) {
+      userLocationMarker.setRotation(position.coords.heading);
+      userLocationMarker.getElement().classList.remove('no-compass');
     }
     
     // 只在首次定位时移动地图到用户位置
@@ -1348,6 +1371,22 @@
     }
     isTracking = false;
   }
+
+  // 处理手机物理罗盘方向（静止时可用）
+  function handleOrientation(event) {
+    let heading = null;
+    if (event.webkitCompassHeading) {
+      // iOS Safari 罗盘直接提供基于磁北/真北的角度
+      heading = event.webkitCompassHeading;
+    } else if (event.absolute && event.alpha !== null) {
+      // Android Chrome（Alpha 是逆时针旋转，转换为顺时针 Heading）
+      heading = 360 - event.alpha;
+    }
+    if (heading !== null && userLocationMarker) {
+      userLocationMarker.setRotation(heading);
+      userLocationMarker.getElement().classList.remove('no-compass');
+    }
+  }
   
   locateButton.addEventListener('click', function() {
     if (!navigator.geolocation) {
@@ -1372,6 +1411,10 @@
           action: 'stop'
         });
       }
+
+      // 移除设备方向监听
+      window.removeEventListener('deviceorientation', handleOrientation, true);
+      window.removeEventListener('deviceorientationabsolute', handleOrientation, true);
       
       // 移除用户位置标记
       if (userLocationMarker) {
@@ -1412,6 +1455,21 @@
           maximumAge: 5000 // 允许使用5秒内的缓存位置
         }
       );
+
+      // 请求设备方向权限以获取罗盘数据（适配 iOS 13+ 安全策略）
+      if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+        DeviceOrientationEvent.requestPermission()
+          .then(permissionState => {
+            if (permissionState === 'granted') {
+              window.addEventListener('deviceorientation', handleOrientation, true);
+            }
+          })
+          .catch(console.error);
+      } else {
+        // 非 iOS 13+ 平台（如 Android）直接监听
+        window.addEventListener('deviceorientationabsolute', handleOrientation, true);
+        window.addEventListener('deviceorientation', handleOrientation, true);
+      }
     }
   });
 
