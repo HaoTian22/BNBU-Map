@@ -10,7 +10,29 @@ export const config = {
   },
 };
 
+// 允许的来源：可在 Vercel 环境变量 ALLOWED_ORIGIN 中设置（逗号分隔多个），
+// 留空则允许所有来源（*）。
+function getCorsOrigin(reqOrigin) {
+  const allowed = process.env.ALLOWED_ORIGIN;
+  if (!allowed) return '*';
+  const list = allowed.split(',').map((s) => s.trim());
+  return list.includes(reqOrigin) ? reqOrigin : list[0];
+}
+
 export default async function handler(req, res) {
+  const corsOrigin = getCorsOrigin(req.headers.origin || '');
+  res.setHeader('Access-Control-Allow-Origin', corsOrigin);
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  if (corsOrigin !== '*') {
+    res.setHeader('Vary', 'Origin');
+  }
+
+  // 处理浏览器 CORS 预检请求
+  if (req.method === 'OPTIONS') {
+    return res.status(204).end();
+  }
+
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
