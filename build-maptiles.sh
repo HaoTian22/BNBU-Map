@@ -21,5 +21,7 @@ make generate-tiles-pg
 # Securely copy the generated mbtiles file to remote server
 scp -i ~/.ssh/gcp /home/azureuser/openmaptiles/data/tiles.mbtiles u0_a244@100.91.209.78:~/TileServer-GL/data/BNBU-3D.mbtiles
 
+cp /home/azureuser/openmaptiles/data/tiles.mbtiles /home/azureuser/TileServer-GL/data/BNBU-3D.mbtiles
+
 TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
 echo "[${TIMESTAMP}] Map tiles have been built and uploaded successfully."

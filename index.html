@@ -1259,8 +1259,13 @@
       poiId: null
     };
     
-    // 优先从 URL 读取参数 (格式: #map=zoom/lat/lng 或 #map=zoom/lat/lng&poi=id)
+    // 优先从 URL 读取参数 (格式: #map=zoom/lat/lng 或 #map=zoom/lat/lng&poi=id 或 #poi=id)
     const hash = window.location.hash;
+
+    // 提前提取 POI ID（无论 URL 格式如何，支持 #poi=id 和 #map=...&poi=id）
+    const poiMatch = hash ? hash.match(/[#&?]poi=([^&]+)/) : null;
+    const urlPoiId = poiMatch ? poiMatch[1] : null;
+
     if (hash) {
       const match = hash.match(/#map=([\d.]+)\/([\d.]+)\/([\d.]+)/);
       if (match) {
@@ -1268,17 +1273,13 @@
         const lat = parseFloat(match[2]);
         const lng = parseFloat(match[3]);
         
-        // 读取 POI ID
-        const poiMatch = hash.match(/[&?]poi=([^&]+)/);
-        const poiId = poiMatch ? poiMatch[1] : null;
-        
         if (!isNaN(zoom) && !isNaN(lat) && !isNaN(lng)) {
-          return { center: [lng, lat], zoom, poiId };
+          return { center: [lng, lat], zoom, poiId: urlPoiId };
         }
       }
     }
     
-    // 如果 URL 没有参数，从 LocalStorage 读取
+    // 如果 URL 没有地图坐标，从 LocalStorage 读取（但仍保留 URL 中的 POI 参数）
     try {
       const saved = localStorage.getItem('mapState');
       if (saved) {
@@ -1287,7 +1288,7 @@
           return { 
             center: state.center, 
             zoom: state.zoom,
-            poiId: null 
+            poiId: urlPoiId 
           };
         }
       }
@@ -1295,7 +1296,7 @@
       console.warn('Failed to load map state from localStorage:', e);
     }
     
-    return defaults;
+    return { ...defaults, poiId: urlPoiId };
   }
   
   const initialState = getInitialMapState();
@@ -1330,9 +1331,9 @@
     const center = map.getCenter();
     const zoom = map.getZoom();
     
-    // 保留当前的 POI 参数（如果有）
+    // 保留当前的 POI 参数（如果有，兼容 #poi=id 和 #map=...&poi=id 两种格式）
     const currentHash = window.location.hash;
-    const poiMatch = currentHash.match(/[&?]poi=([^&]+)/);
+    const poiMatch = currentHash.match(/[#&?]poi=([^&]+)/);
     const poiParam = poiMatch ? '&poi=' + poiMatch[1] : '';
     
     // 更新 URL (格式: #map=zoom/lat/lng)
