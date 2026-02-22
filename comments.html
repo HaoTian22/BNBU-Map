@@ -306,8 +306,8 @@
     if (diff < 60) return '刚刚';
     if (diff < 3600) return Math.floor(diff / 60) + ' 分钟前';
     if (diff < 86400) return Math.floor(diff / 3600) + ' 小时前';
-    if (diff < 2592000) return Math.floor(diff / 86400) + ' 天前';
-    return d.toLocaleDateString('zh-CN', { year: 'numeric', month: 'short', day: 'numeric' });
+    if (diff < 432000) return Math.floor(diff / 86400) + ' 天前';
+    return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
   }
 
   function stripHtml(html) {
@@ -367,7 +367,7 @@
 
       listEl.innerHTML = comments.map(c => {
         const nick = c.nick || '匿名';
-        const timeStr = formatTime(c.insertedAt || c.createdAt);
+        const timeStr = formatTime(c.time);
         const body = c.comment || '';
         const avatar = c.avatar;
         const path = c.url || '';
