@@ -950,7 +950,7 @@
           const formData = new FormData();
           formData.append('file', file);
           // 调用 Vercel 后端代理，Token 由服务端环境变量注入，前端不可见
-          return fetch('/api/upload', {
+          return fetch('https://umap-uploader.haotian22.top/api/upload', {
             method: 'POST',
             body: formData,
           })
