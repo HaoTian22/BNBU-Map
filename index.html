@@ -8,7 +8,6 @@
   <script src="https://unpkg.com/maplibre-gl@3.6.0/dist/maplibre-gl.js"></script>
   <script src="https://unpkg.com/pinyin-pro@3.19.6/dist/index.js"></script>
   <link rel="stylesheet" href="https://unpkg.com/@waline/client@v3/dist/waline.css" />
-  <script src="https://unpkg.com/@waline/client@v3/dist/waline.js"></script>
   <style>
     body, html { margin: 0; height: 100%; }
     #map { width: 100%; height: 100%; }
@@ -905,27 +904,23 @@
   let gaScriptLoaded = false;
 
   // ======== Waline 评论集成 ========
-  // 请将下方常量替换为你的 Waline 服务端地址
   const WALINE_SERVER_URL = 'umap-comment.haotian22.top';
+  const WALINE_MODULE_URL = 'https://unpkg.com/@waline/client@v3/dist/waline.js';
 
-  // 异步获取某 POI 的评论数
-  async function loadWalineCount(poiId) {
-    const el = document.getElementById('waline-count-' + poiId);
-    if (!el || !WALINE_SERVER_URL || WALINE_SERVER_URL === 'YOUR_WALINE_SERVER_URL') return;
+  // 使用官方 commentCount 工具刷新页面上所有 waline-comment-count 元素
+  async function loadWalineCount() {
+    if (!WALINE_SERVER_URL || WALINE_SERVER_URL === 'YOUR_WALINE_SERVER_URL') return;
     try {
-      const res = await fetch(
-        WALINE_SERVER_URL + '/api/comment?path=' + encodeURIComponent('/poi/' + poiId) + '&type=count'
-      );
-      const data = await res.json();
-      el.textContent = (data && typeof data.data === 'number') ? data.data : 0;
+      const { commentCount } = await import(WALINE_MODULE_URL);
+      commentCount({ serverURL: WALINE_SERVER_URL });
     } catch (e) {
-      el.textContent = '?';
+      console.warn('Waline commentCount failed:', e);
     }
   }
 
   // 打开评论弹窗
   let walineInstance = null;
-  function openCommentModal(poiId, title, color) {
+  async function openCommentModal(poiId, title, color) {
     const overlay = document.getElementById('comment-modal-overlay');
     const titleEl = document.getElementById('comment-modal-title');
     const container = document.getElementById('waline-comment-container');
@@ -938,19 +933,22 @@
       walineInstance = null;
     }
 
-    if (window.Waline) {
-      walineInstance = Waline.init({
+    overlay.classList.add('active');
+    document.body.style.overflow = 'hidden';
+
+    try {
+      const { init } = await import(WALINE_MODULE_URL);
+      walineInstance = init({
         el: '#waline-comment-container',
         serverURL: WALINE_SERVER_URL,
         path: '/poi/' + poiId,
         lang: 'zh-CN',
+        comment: true,
       });
-    } else {
-      container.innerHTML = '<p style="color:#999;font-size:13px;font-family:Arial,sans-serif;text-align:center;padding:20px 0">评论服务未配置，请先设置 WALINE_SERVER_URL</p>';
+    } catch (e) {
+      console.error('Waline init failed:', e);
+      container.innerHTML = '<p style="color:#999;font-size:13px;font-family:Arial,sans-serif;text-align:center;padding:20px 0">评论服务加载失败，请检查网络连接</p>';
     }
-
-    overlay.classList.add('active');
-    document.body.style.overflow = 'hidden';
   }
 
   // 关闭评论弹窗
@@ -962,10 +960,8 @@
       walineInstance.destroy();
       walineInstance = null;
     }
-    // 关闭后刷新评论数（可能刚尚发了评论）
-    document.querySelectorAll('[id^="waline-count-"]').forEach(el => {
-      loadWalineCount(el.id.replace('waline-count-', ''));
-    });
+    // 关闭后刷新评论数（刚发了评论时更新计数）
+    loadWalineCount();
   }
   // ======== End Waline 评论集成 ========
   
@@ -1978,7 +1974,7 @@
             style="width: 100%; padding: 8px 12px; background: white; color: ${categoryInfo.color}; border: 1.5px solid ${categoryInfo.color}; border-radius: 6px; font-size: 12px; cursor: pointer; font-family: Arial, sans-serif; transition: opacity 0.2s;"
             onmouseover="this.style.opacity='0.8'"
             onmouseout="this.style.opacity='1'">
-              💬 Comment / 评论 (<span id="waline-count-${poiId}">…</span>)
+              💬 Comment / 评论 (<span class="waline-comment-count" data-path="/poi/${poiId}" id="waline-count-${poiId}">…</span>)
             </button>
           </div>
         `;
@@ -1988,7 +1984,7 @@
         const popup = new maplibregl.Popup().setHTML(popupContent);
 
         // 监听popup打开时加载评论数
-        popup.on('open', () => loadWalineCount(poiId));
+        popup.on('open', () => loadWalineCount());
         
         // 监听popup关闭事件，延迟移除URL中的poi参数
         popup.on('close', () => {
