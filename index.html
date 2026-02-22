@@ -734,6 +734,7 @@
     .comment-modal-overlay.active {
       opacity: 1;
       pointer-events: all;
+      font-family: Arial, sans-serif;
     }
     .comment-modal {
       background: white;
@@ -906,6 +907,7 @@
   // ======== Waline 评论集成 ========
   const WALINE_SERVER_URL = 'umap-comment.haotian22.top';
   const WALINE_MODULE_URL = 'https://unpkg.com/@waline/client@v3/dist/waline.js';
+  // 图床 API Token 存储在 Vercel 环境变量 IMAGE_API_TOKEN 中，通过 /api/upload 代理转发
 
   // 使用官方 commentCount 工具刷新页面上所有 waline-comment-count 元素
   async function loadWalineCount() {
@@ -944,6 +946,17 @@
         path: '/poi/' + poiId,
         lang: 'zh-CN',
         comment: true,
+        imageUploader: (file) => {
+          const formData = new FormData();
+          formData.append('file', file);
+          // 调用 Vercel 后端代理，Token 由服务端环境变量注入，前端不可见
+          return fetch('/api/upload', {
+            method: 'POST',
+            body: formData,
+          })
+            .then((resp) => resp.json())
+            .then((resp) => resp.data.links.url);
+        },
       });
     } catch (e) {
       console.error('Waline init failed:', e);

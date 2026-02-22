@@ -130,7 +130,8 @@
       margin-top: 1px;
     }
     .comment-poi {
-      margin-left: auto;
+      display: inline-block;
+      margin-top: 4px;
       font-size: 11px;
       color: #2563EB;
       background: #eff6ff;
@@ -138,7 +139,7 @@
       border-radius: 30px;
       white-space: nowrap;
       text-decoration: none;
-      max-width: 140px;
+      max-width: 320px;
       overflow: hidden;
       text-overflow: ellipsis;
     }
@@ -215,7 +216,7 @@
       .header { padding: 12px 16px; }
       .container { padding: 20px 12px 48px; }
       .comment-card { padding: 12px 14px; }
-      .comment-poi { display: none; }
+      .comment-poi { max-width: 280px; }
     }
   </style>
 </head>
@@ -241,12 +242,61 @@
 </div>
 
 <script>
-  // ⚠️ 替换为你的 Waline 服务端地址 / Replace with your Waline server URL
-  const WALINE_SERVER_URL = 'umap-comment.haotian22.top';
+  const WALINE_SERVER_URL = 'https://umap-comment.haotian22.top';
+  const SERVER_URL = WALINE_SERVER_URL.replace(/\/$/, '');
 
   const PAGE_SIZE = 20;
   let currentPage = 1;
   let totalPages = 1;
+
+  // POI id → display name map，从 POI.json 构建
+  const poiNameMap = {};
+
+  function resolvePOIName(props) {
+    // 特殊名称处理（与 index.html 保持一致）
+    if (props.emergency === 'defibrillator' && !props.name) {
+      props['name:en'] = 'AED'; props['name:zh'] = '自动体外除颤器'; props.name = 'AED';
+    }
+    if ((props.amenity === 'lost_property_office' || props.office === 'lost_property') && !props.name) {
+      props['name:en'] = 'Lost and Found'; props['name:zh'] = '失物招领处'; props.name = 'Lost and Found';
+    }
+    if (props.amenity === 'fire_station' && !props.name) {
+      props['name:en'] = 'Fire Station'; props['name:zh'] = '消防站'; props.name = 'Fire Station';
+    }
+    if (props.amenity === 'parking_entrance' && !props.name) {
+      props['name:en'] = 'Parking Entrance'; props['name:zh'] = '停车场入口'; props.name = 'Parking Entrance';
+    }
+    if (props.amenity === 'waste_disposal' && !props.name) {
+      props['name:en'] = 'Waste Disposal'; props['name:zh'] = '垃圾回收点'; props.name = 'Waste Disposal';
+    }
+    if (props.amenity === 'parking' && !props.name) {
+      props['name:en'] = 'Parking'; props['name:zh'] = '停车场'; props.name = 'Parking';
+    }
+    if (props.amenity === 'bicycle_parking' && !props.name) {
+      props['name:en'] = 'Bicycle Parking'; props['name:zh'] = '自行车停车点'; props.name = 'Bicycle Parking';
+    }
+    if (props.amenity === 'waste_transfer_station' && !props.name) {
+      props['name:en'] = 'Waste Transfer Station'; props['name:zh'] = '垃圾中转站'; props.name = 'Waste Transfer Station';
+    }
+    if (props.emergency === 'fire_hydrant' && !props.name) {
+      props['name:en'] = 'Fire Hydrant'; props['name:zh'] = '消防栓'; props.name = 'Fire Hydrant';
+    }
+    const nameEn = props['name:en'];
+    const nameZh = props['name:zh'] || props.name;
+    if (nameEn && nameZh) return nameEn + ' / ' + nameZh;
+    return nameEn || nameZh || '未命名';
+  }
+
+  // 预加载 POI.json 建立 id → name 映射
+  fetch('POI.json')
+    .then(r => r.json())
+    .then(data => {
+      data.elements.forEach(el => {
+        const props = el.tags || {};
+        poiNameMap[String(el.id)] = resolvePOIName(props);
+      });
+    })
+    .catch(() => {}); // 失败时静默，回退到 POI #id 显示
 
   function formatTime(isoStr) {
     if (!isoStr) return '';
@@ -272,9 +322,11 @@
 
   function pathToLabel(path) {
     if (!path) return '';
-    // /poi/123 → POI #123
     const m = path.match(/\/poi\/(.+)/);
-    if (m) return '📍 POI #' + m[1];
+    if (m) {
+      const name = poiNameMap[m[1]];
+      return '📍 ' + (name || 'POI #' + m[1]);
+    }
     return path;
   }
 
@@ -298,7 +350,7 @@
     }
 
     try {
-      const url = WALINE_SERVER_URL + '/api/comment?pageSize=' + PAGE_SIZE + '&page=' + page + '&sortKey=insertedAt&sortOrder=desc';
+      const url = SERVER_URL + '/api/comment?type=recent&pageSize=' + PAGE_SIZE + '&page=' + page;
       const res = await fetch(url);
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const json = await res.json();
@@ -331,8 +383,8 @@
               <div>
                 <div class="comment-author">${nick}</div>
                 <div class="comment-time">${timeStr}</div>
+                ${label ? `<a class="comment-poi" href="${mapUrl}" title="${label}">${label}</a>` : ''}
               </div>
-              ${label ? `<a class="comment-poi" href="${mapUrl}" title="${label}">${label}</a>` : ''}
             </div>
             <div class="comment-body">${body}</div>
           </div>`;
