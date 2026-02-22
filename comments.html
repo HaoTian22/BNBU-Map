@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>All Comments / 全部评论 | BNBU Map</title>
+  <link rel="stylesheet" href="https://unpkg.com/@waline/client@v3/dist/waline.css" />
+  <script src="https://unpkg.com/@waline/client@v3/dist/waline.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #f3f7fb;
+      font-family: Arial, sans-serif;
+      color: #333;
+    }
+
+    .header {
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border-bottom: 1px solid #e5e7eb;
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+    }
+
+    .header-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      background: #eff6ff;
+      color: #2563EB;
+      border: 1.5px solid #bfdbfe;
+      border-radius: 30px;
+      font-size: 13px;
+      font-weight: 500;
+      text-decoration: none;
+      transition: background 0.2s;
+      white-space: nowrap;
+    }
+    .header-back:hover { background: #dbeafe; }
+
+    .header-title {
+      font-size: 17px;
+      font-weight: bold;
+      color: #1e3a5f;
+    }
+    .header-sub {
+      font-size: 12px;
+      color: #6b7280;
+      margin-top: 2px;
+    }
+
+    .container {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 32px 20px 60px;
+    }
+
+    /* 最近评论列表 */
+    .section-title {
+      font-size: 15px;
+      font-weight: bold;
+      color: #374151;
+      margin: 0 0 16px 0;
+      padding-bottom: 8px;
+      border-bottom: 2px solid #e5e7eb;
+    }
+
+    .recent-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .comment-card {
+      background: white;
+      border-radius: 12px;
+      padding: 16px 18px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      transition: box-shadow 0.2s;
+    }
+    .comment-card:hover {
+      box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+    }
+
+    .comment-card-meta {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .comment-avatar {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: #dbeafe;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      color: #2563EB;
+      font-weight: bold;
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+    .comment-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 50%;
+    }
+
+    .comment-author {
+      font-weight: bold;
+      font-size: 13px;
+      color: #1f2937;
+    }
+    .comment-time {
+      font-size: 11px;
+      color: #9ca3af;
+      margin-top: 1px;
+    }
+    .comment-poi {
+      margin-left: auto;
+      font-size: 11px;
+      color: #2563EB;
+      background: #eff6ff;
+      padding: 3px 10px;
+      border-radius: 30px;
+      white-space: nowrap;
+      text-decoration: none;
+      max-width: 140px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .comment-poi:hover { background: #dbeafe; }
+
+    .comment-body {
+      font-size: 13px;
+      line-height: 1.65;
+      color: #374151;
+    }
+    .comment-body p { margin: 0 0 4px; }
+
+    /* 加载状态 */
+    .loading-state {
+      text-align: center;
+      padding: 48px 0;
+      color: #9ca3af;
+      font-size: 14px;
+    }
+    .loading-spinner {
+      width: 36px;
+      height: 36px;
+      border: 3px solid #e5e7eb;
+      border-top: 3px solid #2563EB;
+      border-radius: 50%;
+      animation: spin 0.9s linear infinite;
+      margin: 0 auto 16px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .error-state {
+      text-align: center;
+      padding: 48px 0;
+      color: #ef4444;
+      font-size: 14px;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 48px 0;
+      color: #9ca3af;
+      font-size: 14px;
+    }
+
+    /* 分页 */
+    .pagination {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 28px;
+    }
+    .page-btn {
+      padding: 8px 18px;
+      border: 1.5px solid #e5e7eb;
+      background: white;
+      border-radius: 30px;
+      font-size: 13px;
+      cursor: pointer;
+      color: #374151;
+      transition: all 0.2s;
+      font-family: Arial, sans-serif;
+    }
+    .page-btn:hover:not(:disabled) { background: #eff6ff; border-color: #bfdbfe; color: #2563EB; }
+    .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .page-btn.active { background: #2563EB; color: white; border-color: #2563EB; }
+
+    .page-info {
+      line-height: 36px;
+      font-size: 13px;
+      color: #6b7280;
+    }
+
+    @media (max-width: 600px) {
+      .header { padding: 12px 16px; }
+      .container { padding: 20px 12px 48px; }
+      .comment-card { padding: 12px 14px; }
+      .comment-poi { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <a class="header-back" href="index.html">← 返回地图</a>
+  <div>
+    <div class="header-title">全部评论 / All Comments</div>
+    <div class="header-sub">按时间降序排列 · Sorted by newest first</div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="section-title">最新评论 / Recent Comments</div>
+  <div id="recent-list" class="recent-list">
+    <div class="loading-state">
+      <div class="loading-spinner"></div>
+      加载中 / Loading...
+    </div>
+  </div>
+  <div class="pagination" id="pagination" style="display:none"></div>
+</div>
+
+<script>
+  // ⚠️ 替换为你的 Waline 服务端地址 / Replace with your Waline server URL
+  const WALINE_SERVER_URL = 'YOUR_WALINE_SERVER_URL';
+
+  const PAGE_SIZE = 20;
+  let currentPage = 1;
+  let totalPages = 1;
+
+  function formatTime(isoStr) {
+    if (!isoStr) return '';
+    const d = new Date(isoStr);
+    const now = new Date();
+    const diff = (now - d) / 1000;
+    if (diff < 60) return '刚刚';
+    if (diff < 3600) return Math.floor(diff / 60) + ' 分钟前';
+    if (diff < 86400) return Math.floor(diff / 3600) + ' 小时前';
+    if (diff < 2592000) return Math.floor(diff / 86400) + ' 天前';
+    return d.toLocaleDateString('zh-CN', { year: 'numeric', month: 'short', day: 'numeric' });
+  }
+
+  function stripHtml(html) {
+    const tmp = document.createElement('div');
+    tmp.innerHTML = html || '';
+    return tmp.textContent || tmp.innerText || '';
+  }
+
+  function avatarLetter(nick) {
+    return (nick || '?')[0].toUpperCase();
+  }
+
+  function pathToLabel(path) {
+    if (!path) return '';
+    // /poi/123 → POI #123
+    const m = path.match(/\/poi\/(.+)/);
+    if (m) return '📍 POI #' + m[1];
+    return path;
+  }
+
+  function pathToMapUrl(path) {
+    if (!path) return 'index.html';
+    const m = path.match(/\/poi\/(.+)/);
+    if (m) return 'index.html#poi=' + m[1];
+    return 'index.html';
+  }
+
+  async function loadComments(page) {
+    const listEl = document.getElementById('recent-list');
+    const paginationEl = document.getElementById('pagination');
+
+    listEl.innerHTML = '<div class="loading-state"><div class="loading-spinner"></div>加载中 / Loading...</div>';
+    paginationEl.style.display = 'none';
+
+    if (!WALINE_SERVER_URL || WALINE_SERVER_URL === 'YOUR_WALINE_SERVER_URL') {
+      listEl.innerHTML = '<div class="error-state">⚠️ 请先设置 <code>WALINE_SERVER_URL</code><br><small>Please set WALINE_SERVER_URL in comments.html</small></div>';
+      return;
+    }
+
+    try {
+      const url = WALINE_SERVER_URL + '/api/comment?pageSize=' + PAGE_SIZE + '&page=' + page + '&sortKey=insertedAt&sortOrder=desc';
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const json = await res.json();
+
+      const comments = json.data || [];
+      const total = json.totalComment || 0;
+      totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+      currentPage = page;
+
+      if (comments.length === 0) {
+        listEl.innerHTML = '<div class="empty-state">暂无评论 / No comments yet</div>';
+        return;
+      }
+
+      listEl.innerHTML = comments.map(c => {
+        const nick = c.nick || '匿名';
+        const timeStr = formatTime(c.insertedAt || c.createdAt);
+        const body = c.comment || '';
+        const avatar = c.avatar;
+        const path = c.url || '';
+        const label = pathToLabel(path);
+        const mapUrl = pathToMapUrl(path);
+        const avatarHtml = avatar
+          ? `<img src="${avatar}" alt="${nick}" onerror="this.style.display='none';this.parentElement.textContent='${avatarLetter(nick)}'">`
+          : avatarLetter(nick);
+        return `
+          <div class="comment-card">
+            <div class="comment-card-meta">
+              <div class="comment-avatar">${avatarHtml}</div>
+              <div>
+                <div class="comment-author">${nick}</div>
+                <div class="comment-time">${timeStr}</div>
+              </div>
+              ${label ? `<a class="comment-poi" href="${mapUrl}" title="${label}">${label}</a>` : ''}
+            </div>
+            <div class="comment-body">${body}</div>
+          </div>`;
+      }).join('');
+
+      // Pagination
+      if (totalPages > 1) {
+        let pagHtml = '';
+        pagHtml += `<button class="page-btn" onclick="loadComments(${page - 1})" ${page <= 1 ? 'disabled' : ''}>← 上一页</button>`;
+        pagHtml += `<span class="page-info">${page} / ${totalPages}</span>`;
+        pagHtml += `<button class="page-btn" onclick="loadComments(${page + 1})" ${page >= totalPages ? 'disabled' : ''}>下一页 →</button>`;
+        paginationEl.innerHTML = pagHtml;
+        paginationEl.style.display = 'flex';
+      }
+
+    } catch(e) {
+      console.error(e);
+      listEl.innerHTML = '<div class="error-state">加载失败 / Failed to load<br><small>' + e.message + '</small></div>';
+    }
+  }
+
+  loadComments(1);
+</script>
+</body>
+</html>

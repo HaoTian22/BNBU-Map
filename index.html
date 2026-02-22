@@ -7,6 +7,8 @@
   <link href="https://unpkg.com/maplibre-gl@3.6.0/dist/maplibre-gl.css" rel="stylesheet" />
   <script src="https://unpkg.com/maplibre-gl@3.6.0/dist/maplibre-gl.js"></script>
   <script src="https://unpkg.com/pinyin-pro@3.19.6/dist/index.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/@waline/client@v3/dist/waline.css" />
+  <script src="https://unpkg.com/@waline/client@v3/dist/waline.js"></script>
   <style>
     body, html { margin: 0; height: 100%; }
     #map { width: 100%; height: 100%; }
@@ -714,6 +716,98 @@
         padding: 14px 24px;
       }
     }
+
+    /* 评论弹窗样式 */
+    .comment-modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 20000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+    }
+    .comment-modal-overlay.active {
+      opacity: 1;
+      pointer-events: all;
+    }
+    .comment-modal {
+      background: white;
+      border-radius: 16px;
+      width: 70%;
+      height: 70vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transform: scale(0.92) translateY(20px);
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+    .comment-modal-overlay.active .comment-modal {
+      transform: scale(1) translateY(0);
+    }
+    .comment-modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 18px;
+      border-bottom: 1px solid #eee;
+      flex-shrink: 0;
+      background: white;
+    }
+    .comment-modal-title {
+      font-size: 14px;
+      font-weight: bold;
+      color: #333;
+      font-family: Arial, sans-serif;
+      flex: 1;
+      margin-right: 12px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .comment-modal-close {
+      background: #f3f4f6;
+      border: none;
+      font-size: 15px;
+      cursor: pointer;
+      color: #6b7280;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: background 0.2s, color 0.2s;
+      font-family: Arial, sans-serif;
+      line-height: 1;
+    }
+    .comment-modal-close:hover {
+      background: #e5e7eb;
+      color: #374151;
+    }
+    .comment-modal-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+    }
+    @media (max-width: 768px) {
+      .comment-modal {
+        width: 100%;
+        height: 100%;
+        border-radius: 0;
+        transform: scale(1) translateY(40px);
+      }
+      .comment-modal-overlay.active .comment-modal {
+        transform: scale(1) translateY(0);
+      }
+    }
   </style>
 </head>
 <body>
@@ -782,18 +876,98 @@
   </div>
   <div class="osm-attribution">
     © <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors | Data available under ODbL<br>
+    <a href="comments.html" target="_blank">查看全部评论 / All Comments</a>
   </div>
   <div class="feedback-note">
     Feedback / 反馈: via
     <a href="https://github.com/HaoTian22/BNBU-Map/issues" target="_blank">GitHub Issues</a>
     or
     <a href="mailto:hao_tian22@outlook.com">Email</a>
+  </div>
+</div>
+
+<!-- 评论弹窗 -->
+<div id="comment-modal-overlay" class="comment-modal-overlay" onclick="if(event.target===this)closeCommentModal()">
+  <div class="comment-modal">
+    <div class="comment-modal-header">
+      <div class="comment-modal-title" id="comment-modal-title"></div>
+      <button class="comment-modal-close" onclick="closeCommentModal()" title="关闭 / Close">✕</button>
+    </div>
+    <div class="comment-modal-body">
+      <div id="waline-comment-container"></div>
+    </div>
+  </div>
 </div>
 
 <script>
   // Cookie同意管理
   let analyticsConsent = false;
   let gaScriptLoaded = false;
+
+  // ======== Waline 评论集成 ========
+  // 请将下方常量替换为你的 Waline 服务端地址
+  const WALINE_SERVER_URL = 'umap-comment.haotian22.top';
+
+  // 异步获取某 POI 的评论数
+  async function loadWalineCount(poiId) {
+    const el = document.getElementById('waline-count-' + poiId);
+    if (!el || !WALINE_SERVER_URL || WALINE_SERVER_URL === 'YOUR_WALINE_SERVER_URL') return;
+    try {
+      const res = await fetch(
+        WALINE_SERVER_URL + '/api/comment?path=' + encodeURIComponent('/poi/' + poiId) + '&type=count'
+      );
+      const data = await res.json();
+      el.textContent = (data && typeof data.data === 'number') ? data.data : 0;
+    } catch (e) {
+      el.textContent = '?';
+    }
+  }
+
+  // 打开评论弹窗
+  let walineInstance = null;
+  function openCommentModal(poiId, title, color) {
+    const overlay = document.getElementById('comment-modal-overlay');
+    const titleEl = document.getElementById('comment-modal-title');
+    const container = document.getElementById('waline-comment-container');
+
+    titleEl.innerHTML = '<span style="color:' + color + '">💬 ' + title + '</span>';
+    container.innerHTML = '';
+
+    if (walineInstance && walineInstance.destroy) {
+      walineInstance.destroy();
+      walineInstance = null;
+    }
+
+    if (window.Waline) {
+      walineInstance = Waline.init({
+        el: '#waline-comment-container',
+        serverURL: WALINE_SERVER_URL,
+        path: '/poi/' + poiId,
+        lang: 'zh-CN',
+      });
+    } else {
+      container.innerHTML = '<p style="color:#999;font-size:13px;font-family:Arial,sans-serif;text-align:center;padding:20px 0">评论服务未配置，请先设置 WALINE_SERVER_URL</p>';
+    }
+
+    overlay.classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+
+  // 关闭评论弹窗
+  function closeCommentModal() {
+    const overlay = document.getElementById('comment-modal-overlay');
+    overlay.classList.remove('active');
+    document.body.style.overflow = '';
+    if (walineInstance && walineInstance.destroy) {
+      walineInstance.destroy();
+      walineInstance = null;
+    }
+    // 关闭后刷新评论数（可能刚尚发了评论）
+    document.querySelectorAll('[id^="waline-count-"]').forEach(el => {
+      loadWalineCount(el.id.replace('waline-count-', ''));
+    });
+  }
+  // ======== End Waline 评论集成 ========
   
   // 动态加载Google Analytics脚本
   function loadGoogleAnalytics() {
@@ -1777,9 +1951,9 @@
         if (props.note) popupContent += `<p style="margin: 4px 0; color: #666;"><strong>Note / 备注:</strong> ${props.note}</p>`;
         if (props.description) popupContent += `<p style="margin: 4px 0; color: #666;"><strong>Description / 描述:</strong> ${props.description}</p>`;
         
-        // 添加分享按钮
+        // 添加分享和评论按钮
         popupContent += `
-          <div style="margin-top: 12px; padding-top: 8px; border-top: 1px solid #eee;">
+          <div style="margin-top: 12px; padding-top: 8px; border-top: 1px solid #eee; display: flex; flex-direction: column; gap: 8px;">
             <button onclick="
               const url = window.location.origin + window.location.pathname + '#map=' + ${map.getZoom().toFixed(2)} + '/' + ${lat.toFixed(6)} + '/' + ${lon.toFixed(6)} + '&poi=${poiId}';
               if (typeof gtag !== 'undefined') {
@@ -1798,7 +1972,13 @@
             " style="width: 100%; padding: 8px 12px; background: ${categoryInfo.color}; color: white; border: none; border-radius: 6px; font-size: 12px; cursor: pointer; font-family: Arial, sans-serif; transition: opacity 0.2s;" 
             onmouseover="this.style.opacity='0.8'" 
             onmouseout="this.style.opacity='1'">
-              📋 Copy Share Link / 复制分享链接
+              📋 Share / 分享
+            </button>
+            <button onclick="openCommentModal('${poiId}', '${displayName.replace('<br>', ' ').replace(/'/g, "\\'").replace(/`/g, '\\`')}', '${categoryInfo.color}')"
+            style="width: 100%; padding: 8px 12px; background: white; color: ${categoryInfo.color}; border: 1.5px solid ${categoryInfo.color}; border-radius: 6px; font-size: 12px; cursor: pointer; font-family: Arial, sans-serif; transition: opacity 0.2s;"
+            onmouseover="this.style.opacity='0.8'"
+            onmouseout="this.style.opacity='1'">
+              💬 Comment / 评论 (<span id="waline-count-${poiId}">…</span>)
             </button>
           </div>
         `;
@@ -1806,6 +1986,9 @@
         popupContent += '</div>';
 
         const popup = new maplibregl.Popup().setHTML(popupContent);
+
+        // 监听popup打开时加载评论数
+        popup.on('open', () => loadWalineCount(poiId));
         
         // 监听popup关闭事件，延迟移除URL中的poi参数
         popup.on('close', () => {
