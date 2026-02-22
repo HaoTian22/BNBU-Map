@@ -127,7 +127,8 @@
     .comment-time {
       font-size: 11px;
       color: #9ca3af;
-      margin-top: 1px;
+      margin-left: 6px;
+      font-weight: normal;
     }
     .comment-poi {
       display: inline-block;
@@ -381,8 +382,7 @@
             <div class="comment-card-meta">
               <div class="comment-avatar">${avatarHtml}</div>
               <div>
-                <div class="comment-author">${nick}</div>
-                <div class="comment-time">${timeStr}</div>
+                <div class="comment-author">${nick}<span class="comment-time">${timeStr}</span></div>
                 ${label ? `<a class="comment-poi" href="${mapUrl}" title="${label}">${label}</a>` : ''}
               </div>
             </div>
