@@ -1061,14 +1061,16 @@
   const loadingSubtext = document.querySelector('.loading-subtext');
   
   // 资源加载跟踪
+  // 不再按类别分段计权重——字体/sprite/PBF 是并行发出的，分类计数会导致比例震荡。
+  // 改用统一的 pending/completed 计数器：进度 = completed/(completed+pending)，
+  // 映射到 15%→95% 区间；map.idle 触发后置 100%。
   const resourceTracker = {
-    styleJson: { loaded: false, weight: 15 },      // 样式JSON文件
-    fonts: { count: 0, loaded: 0, weight: 10 },    // 字体文件
-    sprites: { count: 0, loaded: 0, weight: 10 },  // Sprite图像
-    pbfTiles: { count: 0, loaded: 0, weight: 50 }, // PBF瓦片
-    mapIdle: { loaded: false, weight: 15 }         // 地图idle状态
+    styleJson: { loaded: false },
+    pending: 0,    // 当前在途请求数（已发出未完成）
+    completed: 0,  // 已完成请求数
+    mapIdle: false
   };
-  
+
   // 更新加载进度和文本
   function updateLoadingProgress(progress, statusText = null, subText = null) {
     if (loadingProgress) {
@@ -1081,73 +1083,31 @@
       loadingSubtext.textContent = subText;
     }
   }
-  
-  // 计算总进度
-  function calculateTotalProgress() {
-    let totalProgress = 0;
-    
-    // 样式JSON加载
-    if (resourceTracker.styleJson.loaded) {
-      totalProgress += resourceTracker.styleJson.weight;
-    }
-    
-    // 字体加载进度
-    if (resourceTracker.fonts.count > 0) {
-      const fontProgress = (resourceTracker.fonts.loaded / resourceTracker.fonts.count) * resourceTracker.fonts.weight;
-      totalProgress += fontProgress;
-    }
-    
-    // Sprite加载进度
-    if (resourceTracker.sprites.count > 0) {
-      const spriteProgress = (resourceTracker.sprites.loaded / resourceTracker.sprites.count) * resourceTracker.sprites.weight;
-      totalProgress += spriteProgress;
-    }
-    
-    // PBF瓦片加载进度
-    if (resourceTracker.pbfTiles.count > 0) {
-      const tileProgress = (resourceTracker.pbfTiles.loaded / resourceTracker.pbfTiles.count) * resourceTracker.pbfTiles.weight;
-      totalProgress += tileProgress;
-    }
-    
-    // 地图idle状态
-    if (resourceTracker.mapIdle.loaded) {
-      totalProgress += resourceTracker.mapIdle.weight;
-    }
-    
-    return Math.min(totalProgress, 100);
-  }
-  
-  // 更新状态文本
+
+  // 根据当前计数器状态刷新进度条
+  // 进度分三段：
+  //   0%  → 15% : styleJson 加载中
+  //   15% → 95% : 所有并行资源（字体/sprite/PBF）按完成比例线性插值
+  //   95% → 100%: mapIdle 触发后由 hideLoadingOverlay 完成
   function updateStatusText() {
-    const { styleJson, fonts, sprites, pbfTiles, mapIdle } = resourceTracker;
-    
-    if (mapIdle.loaded) {
+    if (resourceTracker.mapIdle) {
       updateLoadingProgress(100, 'Map Ready / 地图就绪', 'Almost there / 即将完成');
-    } else if (pbfTiles.count > 0 && pbfTiles.loaded > 0) {
-      const tilePercent = Math.floor((pbfTiles.loaded / pbfTiles.count) * 100);
+      return;
+    }
+
+    const total = resourceTracker.completed + resourceTracker.pending;
+    if (total > 0) {
+      // 15% + completed/total * 80%，最高 95%
+      const ratio = resourceTracker.completed / total;
+      const progress = 15 + ratio * 80;
+      const pct = Math.floor(ratio * 100);
       updateLoadingProgress(
-        calculateTotalProgress(),
-        'Loading Map Tiles / 加载地图瓦片',
-        `${pbfTiles.loaded}/${pbfTiles.count} tiles loaded (${tilePercent}%) / 已加载瓦片`
+        progress,
+        'Loading Map Resources / 正在加载地图资源',
+        `${resourceTracker.completed}/${total} resources loaded (${pct}%) / 已加载资源`
       );
-    } else if (sprites.count > 0 && sprites.loaded < sprites.count) {
-      updateLoadingProgress(
-        calculateTotalProgress(),
-        'Loading Icons / 加载图标',
-        `Loading sprite images / 正在加载图标资源`
-      );
-    } else if (fonts.count > 0 && fonts.loaded < fonts.count) {
-      updateLoadingProgress(
-        calculateTotalProgress(),
-        'Loading Fonts / 加载字体',
-        `${fonts.loaded}/${fonts.count} fonts loaded / 已加载字体`
-      );
-    } else if (styleJson.loaded) {
-      updateLoadingProgress(
-        calculateTotalProgress(),
-        'Preparing Map / 准备地图',
-        'Loading map resources / 正在加载地图资源'
-      );
+    } else if (resourceTracker.styleJson.loaded) {
+      updateLoadingProgress(15, 'Preparing Map / 准备地图', 'Waiting for resources / 等待资源请求');
     } else {
       updateLoadingProgress(5, 'Initializing / 初始化中', 'Connecting to server / 连接服务器');
     }
@@ -1168,82 +1128,59 @@
   
   // 监听网络请求以检测资源加载
   const originalFetch = window.fetch;
-  
+
   window.fetch = function(...args) {
     const url = typeof args[0] === 'string' ? args[0] : args[0]?.url || '';
-    
-    // 检测样式JSON文件
+
+    // 样式JSON单独处理（不计入 pending/completed，完成后标记阶段转换）
     if (url.includes('style.json')) {
-      console.log('Loading style.json:', url);
       return originalFetch.apply(this, args).then(response => {
         if (response.ok) {
           resourceTracker.styleJson.loaded = true;
-          console.log('✓ Style JSON loaded');
           updateStatusText();
         }
         return response;
-      }).catch(error => {
-        console.error('Error loading style.json:', error);
-        return Promise.reject(error);
       });
     }
-    
-    // 检测字体文件
-    if (url.includes('fonts') || url.match(/\.(pbf|ttf|woff|woff2)$/)) {
-      if (!url.includes('tiles')) { // 排除瓦片pbf
-        resourceTracker.fonts.count++;
-        console.log(`Loading font: ${url.split('/').pop()}`);
-        return originalFetch.apply(this, args).then(response => {
-          if (response.ok) {
-            resourceTracker.fonts.loaded++;
-            console.log(`✓ Font loaded (${resourceTracker.fonts.loaded}/${resourceTracker.fonts.count})`);
-            updateStatusText();
-          }
-          return response;
-        }).catch(error => {
-          console.error('Error loading font:', error);
-          return Promise.reject(error);
-        });
-      }
-    }
-    
-    // 检测sprite图像
-    if (url.includes('sprite') && (url.includes('.png') || url.includes('.json'))) {
-      resourceTracker.sprites.count++;
-      const fileType = url.includes('.png') ? 'PNG' : 'JSON';
-      console.log(`Loading sprite ${fileType}:`, url.split('/').pop());
+
+    // 字体、sprite、PBF 瓦片 — 统一用 pending/completed 计数
+    const isFont   = (url.includes('fonts') || url.match(/\.(ttf|woff|woff2)$/)) && !url.includes('tiles');
+    const isSprite = url.includes('sprite') && (url.includes('.png') || url.includes('.json'));
+    const isTile   = url.includes('tiles') && url.includes('.pbf');
+
+    if (isFont || isSprite || isTile) {
+      resourceTracker.pending++;
+      updateStatusText();
+
       return originalFetch.apply(this, args).then(response => {
-        if (response.ok) {
-          resourceTracker.sprites.loaded++;
-          console.log(`✓ Sprite ${fileType} loaded (${resourceTracker.sprites.loaded}/${resourceTracker.sprites.count})`);
-          updateStatusText();
+        resourceTracker.pending--;
+        if (response.ok) resourceTracker.completed++;
+        updateStatusText();
+        // PBF 瓦片由 Web Worker 发出，window.fetch 无法拦截。
+        // 当所有主线程可追踪资源（字体/sprite）完成后，idle 可能还需等待
+        // Worker 中的瓦片渲染完毕。此处设置 1.5s 兜底，避免卡在"100%"。
+        if (resourceTracker.pending === 0) {
+          setTimeout(() => {
+            if (loadingOverlay && !loadingOverlay.classList.contains('fade-out')) {
+              hideLoadingOverlay();
+            }
+          }, 500);
         }
         return response;
       }).catch(error => {
-        console.error('Error loading sprite:', error);
-        return Promise.reject(error);
-      });
-    }
-    
-    // 检测PBF瓦片文件
-    if (url.includes('tiles') && url.includes('.pbf')) {
-      resourceTracker.pbfTiles.count++;
-      const tileCoords = url.match(/(\d+)\/(\d+)\/(\d+)\.pbf/);
-      const tileName = tileCoords ? `${tileCoords[1]}/${tileCoords[2]}/${tileCoords[3]}` : 'tile';
-      
-      return originalFetch.apply(this, args).then(response => {
-        if (response.ok) {
-          resourceTracker.pbfTiles.loaded++;
-          console.log(`✓ Tile loaded: ${tileName} (${resourceTracker.pbfTiles.loaded}/${resourceTracker.pbfTiles.count})`);
-          updateStatusText();
+        resourceTracker.pending--;
+        updateStatusText();
+        if (resourceTracker.pending === 0) {
+          setTimeout(() => {
+            if (loadingOverlay && !loadingOverlay.classList.contains('fade-out')) {
+              hideLoadingOverlay();
+            }
+          }, 500);
         }
-        return response;
-      }).catch(error => {
-        console.error('Error loading tile:', error);
         return Promise.reject(error);
       });
     }
-    
+
     return originalFetch.apply(this, args);
   };
   
@@ -1388,19 +1325,18 @@
   });
   
   // 监听首次渲染完成
-  let idleFired = false;
+  // 不使用 idleFired 单次守卫：BFCache 恢复后 idle 会再次触发需要再次隐藏 overlay；
+  // hideLoadingOverlay 内部已有 fade-out 类守卫，可安全多次调用。
   map.on('idle', function() {
-    if (!idleFired) {
-      idleFired = true;
-      resourceTracker.mapIdle.loaded = true;
-      console.log('Map idle - all visible tiles loaded');
-      updateStatusText();
-      
-      // 延迟隐藏加载条，让用户看到100%
-      setTimeout(() => {
-        hideLoadingOverlay();
-      }, 500);
-    }
+    sessionStorage.setItem('mapLoaded', '1');
+    resourceTracker.mapIdle = true;
+    console.log('Map idle - all visible tiles loaded');
+    updateStatusText();
+    
+    // 延迟隐藏加载条，让用户看到100%
+    setTimeout(() => {
+      hideLoadingOverlay();
+    }, 500);
   });
   
   // 超时保护：15秒后自动隐藏加载条
