@@ -1468,6 +1468,14 @@
     console.error('定位错误:', error);
     locateButton.classList.remove('locating', 'active');
     
+    // POSITION_UNAVAILABLE 通常是 iOS Safari 切换到后台/锁屏后位置流被系统临时切断，
+    // watchPosition 依然有效，回到前台后会自动恢复。
+    // 非首次定位（已成功获取过位置）时静默忽略；首次定位失败则正常报错。
+    if (error.code === error.POSITION_UNAVAILABLE && !isFirstLocation) {
+      console.warn('定位暂时不可用（可能处于后台/锁屏），等待恢复中…');
+      return;
+    }
+
     let errorMessage = 'Unable to get location / 无法获取位置';
     let errorType = 'unknown';
     switch(error.code) {
