@@ -1165,9 +1165,9 @@
     }
 
     // 字体、sprite、PBF 瓦片 — 统一用 pending/completed 计数
-    const isFont   = (url.includes('fonts') || url.match(/\.(ttf|woff|woff2)$/)) && !url.includes('tiles');
-    const isSprite = url.includes('sprite') && (url.includes('.png') || url.includes('.json'));
-    const isTile   = url.includes('tiles') && url.includes('.pbf');
+    const isFont   = url.includes('fonts') || url.includes('.pbf')
+    const isSprite = url.includes('sprites') && (url.includes('.png') || url.includes('.json'));
+    const isTile   = url.includes('data') && url.includes('.pbf');
 
     if (isFont || isSprite || isTile) {
       if (isFont)   resourceTracker.seenFont   = true;
