@@ -1164,7 +1164,7 @@
             if (loadingOverlay && !loadingOverlay.classList.contains('fade-out')) {
               hideLoadingOverlay();
             }
-          }, 500);
+          }, 1500);
         }
         return response;
       }).catch(error => {
@@ -1175,7 +1175,7 @@
             if (loadingOverlay && !loadingOverlay.classList.contains('fade-out')) {
               hideLoadingOverlay();
             }
-          }, 500);
+          }, 1500);
         }
         return Promise.reject(error);
       });
