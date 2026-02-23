@@ -1068,7 +1068,12 @@
     styleJson: { loaded: false },
     pending: 0,    // 当前在途请求数（已发出未完成）
     completed: 0,  // 已完成请求数
-    mapIdle: false
+    mapIdle: false,
+    // 三类资源是否已各自出现过至少一个请求
+    // 仅当三者均为 true 且 pending===0 时才触发 pending=0 兜底隐藏
+    seenFont: false,
+    seenSprite: false,
+    seenTile: false
   };
 
   // 更新加载进度和文本
@@ -1126,6 +1131,22 @@
     }
   }
   
+  // 仅当三类资源均已出现过且当前无在途请求时触发兜底隐藏
+  function checkAllDone() {
+    if (
+      resourceTracker.pending === 0 &&
+      resourceTracker.seenFont &&
+      resourceTracker.seenSprite &&
+      resourceTracker.seenTile
+    ) {
+      setTimeout(() => {
+        if (loadingOverlay && !loadingOverlay.classList.contains('fade-out')) {
+          hideLoadingOverlay();
+        }
+      }, 1500);
+    }
+  }
+
   // 监听网络请求以检测资源加载
   const originalFetch = window.fetch;
 
@@ -1149,6 +1170,9 @@
     const isTile   = url.includes('tiles') && url.includes('.pbf');
 
     if (isFont || isSprite || isTile) {
+      if (isFont)   resourceTracker.seenFont   = true;
+      if (isSprite) resourceTracker.seenSprite = true;
+      if (isTile)   resourceTracker.seenTile   = true;
       resourceTracker.pending++;
       updateStatusText();
 
@@ -1156,27 +1180,12 @@
         resourceTracker.pending--;
         if (response.ok) resourceTracker.completed++;
         updateStatusText();
-        // PBF 瓦片由 Web Worker 发出，window.fetch 无法拦截。
-        // 当所有主线程可追踪资源（字体/sprite）完成后，idle 可能还需等待
-        // Worker 中的瓦片渲染完毕。此处设置 1.5s 兜底，避免卡在"100%"。
-        if (resourceTracker.pending === 0) {
-          setTimeout(() => {
-            if (loadingOverlay && !loadingOverlay.classList.contains('fade-out')) {
-              hideLoadingOverlay();
-            }
-          }, 1500);
-        }
+        checkAllDone();
         return response;
       }).catch(error => {
         resourceTracker.pending--;
         updateStatusText();
-        if (resourceTracker.pending === 0) {
-          setTimeout(() => {
-            if (loadingOverlay && !loadingOverlay.classList.contains('fade-out')) {
-              hideLoadingOverlay();
-            }
-          }, 1500);
-        }
+        checkAllDone();
         return Promise.reject(error);
       });
     }
