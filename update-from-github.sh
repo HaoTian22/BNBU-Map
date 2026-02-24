@@ -20,10 +20,27 @@ echo "[$TIMESTAMP] 仓库: ${GITHUB_USER}/${GITHUB_REPO}"
 echo "[$TIMESTAMP] 分支: ${GITHUB_BRANCH}"
 echo ""
 
-# 检查配置文件是否存在
+# 第一步：从 GitHub 更新文件列表
+echo "[$TIMESTAMP] 第一步：从 GitHub 更新配置文件 $CONFIG_FILE ..."
+CONFIG_TEMP="${CONFIG_FILE}.tmp"
+if curl -f -s -S -L "${GITHUB_RAW_URL}/${CONFIG_FILE}" -o "$CONFIG_TEMP" --max-time 30 && [ -s "$CONFIG_TEMP" ]; then
+  if [ -f "$CONFIG_FILE" ] && cmp -s "$CONFIG_FILE" "$CONFIG_TEMP"; then
+    echo "[$TIMESTAMP]   ⊙ 配置文件无变化"
+    rm -f "$CONFIG_TEMP"
+  else
+    mv "$CONFIG_TEMP" "$CONFIG_FILE"
+    echo "[$TIMESTAMP]   ✓ 配置文件已更新"
+  fi
+else
+  rm -f "$CONFIG_TEMP"
+  echo "[$TIMESTAMP]   ✗ 配置文件下载失败，使用本地现有版本"
+fi
+echo ""
+
+# 第二步：从（已更新的）配置文件读取文件列表
+echo "[$TIMESTAMP] 第二步：读取文件列表并更新各文件..."
 if [ ! -f "$CONFIG_FILE" ]; then
-  echo "[$TIMESTAMP] 警告: 配置文件 $CONFIG_FILE 不存在"
-  echo "[$TIMESTAMP] 使用默认文件列表"
+  echo "[$TIMESTAMP] 警告: 配置文件 $CONFIG_FILE 不存在，使用默认文件列表"
   # 默认文件列表
   FILES_TO_UPDATE=(
     "index.html"
@@ -34,7 +51,6 @@ if [ ! -f "$CONFIG_FILE" ]; then
     "update-from-github.bat"
   )
 else
-  echo "[$TIMESTAMP] 从配置文件读取更新列表: $CONFIG_FILE"
   # 从配置文件读取，忽略注释和空行
   mapfile -t FILES_TO_UPDATE < <(grep -v '^#' "$CONFIG_FILE" | grep -v '^[[:space:]]*$' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
   echo "[$TIMESTAMP] 找到 ${#FILES_TO_UPDATE[@]} 个文件需要检查"
@@ -50,8 +66,16 @@ SUCCESS_COUNT=0
 FAIL_COUNT=0
 SKIP_COUNT=0
 
-# 下载并更新每个文件
+# 下载并更新每个文件（跳过已在第一步更新的配置文件）
 for FILE in "${FILES_TO_UPDATE[@]}"; do
+  # 配置文件已在第一步更新，跳过
+  if [ "$FILE" = "$CONFIG_FILE" ]; then
+    echo "[$TIMESTAMP] 跳过文件: $FILE（已在第一步更新）"
+    SKIP_COUNT=$((SKIP_COUNT + 1))
+    echo ""
+    continue
+  fi
+
   echo "[$TIMESTAMP] 处理文件: $FILE"
   
   # 检查本地文件是否存在
