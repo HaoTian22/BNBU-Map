@@ -10,19 +10,21 @@
   "lang": "zh-CN",
   "icons": [
     {
-      "src": "/favicon.ico",
-      "sizes": "any",
-      "type": "image/x-icon",
+      "src": "/icon.png",
+      "sizes": "256x256",
+      "type": "image/png",
       "purpose": "any"
     }
   ],
-  "categories": ["navigation", "education"],
-  "shortcuts": [
+  "categories": ["navigation", "utilities"],
+  "screenshots": [
     {
-      "name": "搜索地点",
-      "short_name": "搜索",
-      "url": "/?action=search",
-      "description": "搜索校园内的建筑和设施"
+      "src": "https://private-user-images.githubusercontent.com/48882584/538075386-2e67a00b-6643-4cf6-b852-9559dd854acb.png?jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NzE5MjI0OTgsIm5iZiI6MTc3MTkyMjE5OCwicGF0aCI6Ii80ODg4MjU4NC81MzgwNzUzODYtMmU2N2EwMGItNjY0My00Y2Y2LWI4NTItOTU1OWRkODU0YWNiLnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNjAyMjQlMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjYwMjI0VDA4MzYzOFomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPWEyNDdlNmY5ZjU5ZTlhZTczNzliMWIxY2JlNjY1ZmJmNjY3Y2IzMzJjZjRhYjhiZmQ5ZTQwNjM1YjRhYWQ0MjEmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0In0.A5-omcR9jSHrq560zv8w97gSWvF5OuZpi6lE3yi85-o",
+      "type": "image/png"
+    },
+    {
+      "src": "https://private-user-images.githubusercontent.com/48882584/554004694-97ae8fd0-00ea-48ac-83a4-d6a2f7318486.png?jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtlI6ImtlYXQiLCJleHAiOjE3NzE5MjI0OTgsIm5iZiI6MTc3MTkyMjE5OCwicGF0aCI6Ii80ODg4MjU4NC81NTQwMDQ2OTQtOTdhZThmZDAtMDBlYS00OGFjLTgzYTQtZDZhMmY3MzE4NDg2LnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNjAyMjQlMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjYwMjI0VDA4MzYzOFomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTQyZDcxMjYzODZjNTM1YmQ4MGJjZjViYjlmNmZmYjI4NzhlMmQ5YWM3ZDM0NDI2MmI5MDRkZGQ4NDNhN2Q2M2ImWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0In0.XS17Crou0uA4XIAtezrX8lMiKkjpi1GWJgrO9ybyITg",
+      "type": "image/png"
     }
   ]
 }
