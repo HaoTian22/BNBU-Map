@@ -1739,6 +1739,7 @@
   // 存储所有标记点
   const markers = [];
   const markerData = []; // 存储标记点的详细数据用于搜索
+  let openingPopupCount = 0; // 当前打开的POI数量，>0时关闭不移除URL中的poi参数
   
   // 使用 pinyin-pro 库进行拼音转换
   function getPinyin(text) {
@@ -1963,24 +1964,22 @@
 
         const popup = new maplibregl.Popup().setHTML(popupContent);
 
-        // 监听popup打开时加载评论数
-        popup.on('open', () => loadWalineCount());
+        // 监听popup打开时加载评论数，并计数
+        popup.on('open', () => {
+          openingPopupCount++;
+          loadWalineCount();
+        });
         
-        // 监听popup关闭事件，延迟移除URL中的poi参数
+        // 监听popup关闭事件，计数归零时移除URL中的poi参数
         popup.on('close', () => {
-          // 延迟50ms检查，如果是切换到另一个POI，URL已经被更新，就不要移除poi参数
-          setTimeout(() => {
-            const currentHash = window.location.hash;
-            // 如果当前URL中还有poi参数，说明是切换到了另一个POI，不要移除
-            if (currentHash.includes('&poi=')) {
-              return;
-            }
-            // 否则移除poi参数
+          openingPopupCount--;
+          if (openingPopupCount <= 0) {
+            openingPopupCount = 0;
             const center = map.getCenter();
             const zoom = map.getZoom();
             const newHash = `#map=${zoom.toFixed(2)}/${center.lat.toFixed(6)}/${center.lng.toFixed(6)}`;
             window.history.replaceState(null, '', newHash);
-          }, 50);
+          }
         });
         
         // 保存原始的remove方法
