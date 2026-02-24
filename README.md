@@ -18,6 +18,7 @@ Features include:
 - Beautiful Acrylic UI
 
 <img width="2488" height="1421" alt="image" src="https://github.com/user-attachments/assets/2e67a00b-6643-4cf6-b852-9559dd854acb" />
+<img width="1812" height="925" alt="image" src="https://github.com/user-attachments/assets/97ae8fd0-00ea-48ac-83a4-d6a2f7318486" />
 
 
 ## Data Update Schedule
