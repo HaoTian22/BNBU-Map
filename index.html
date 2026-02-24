@@ -1296,7 +1296,12 @@
     
     // 更新 URL (格式: #map=zoom/lat/lng)
     const newHash = `#map=${zoom.toFixed(2)}/${center.lat.toFixed(6)}/${center.lng.toFixed(6)}${poiParam}`;
-    window.history.replaceState(null, '', newHash);
+    try {
+      window.history.replaceState(null, '', newHash);
+    } catch (e) {
+      // iOS Safari may throttle or reject replaceState; fall back to hash assignment
+      location.hash = newHash.replace(/^#/, '');
+    }
     
     // 保存到 LocalStorage
     try {
@@ -1976,7 +1981,12 @@
           if (openingPopupCount <= 0) {
             openingPopupCount = 0;
             const newHash = window.location.hash.replace(/[&?]poi=[^&]+/, '');
-            window.history.replaceState(null, '', newHash);
+            try {
+              window.history.replaceState(null, '', newHash);
+            } catch (e) {
+              // iOS Safari may throttle or reject replaceState; fall back to hash assignment
+              location.hash = newHash.replace(/^#/, '');
+            }
           }
         });
         
@@ -2016,7 +2026,12 @@
           const center = map.getCenter();
           const zoom = map.getZoom();
           const newHash = `#map=${zoom.toFixed(2)}/${center.lat.toFixed(6)}/${center.lng.toFixed(6)}&poi=${poiId}`;
-          window.history.replaceState(null, '', newHash);
+          try {
+            window.history.replaceState(null, '', newHash);
+          } catch (e) {
+            // iOS Safari may throttle or reject replaceState; fall back to hash assignment
+            location.hash = newHash.replace(/^#/, '');
+          }
           
           // GA4: POI点击事件
           if (typeof gtag !== 'undefined') {
