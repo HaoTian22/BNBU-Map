@@ -14,6 +14,7 @@ Features include:
 - User real-time location viewing.
 - Mobile-friendly design for use on smartphones and tablets.
 - Fantastic Animations (you should really try it!)
+- Comment system for users to share feedback and suggestions.
 - Beautiful Acrylic UI
 
 <img width="2488" height="1421" alt="image" src="https://github.com/user-attachments/assets/2e67a00b-6643-4cf6-b852-9559dd854acb" />
@@ -72,4 +73,6 @@ For more details on attribution requirements, see the [LICENSE](LICENSE) file.
 
 ---
 
-Disclaimer: This project is not affiliated with or endorsed by Beijing Normal University-Hong Kong Baptist University United International College (BNBU). It is an independent initiative created to enhance campus navigation and accessibility for the BNBU community.
+Disclaimer: This project is not affiliated with or endorsed by Beijing Normal University-Hong Kong Baptist University United International College (BNBU). It is an independent initiative created to enhance campus navigation and accessibility for the BNBU community.  
+
+The map data are complete purely by the volunteer contributors and may not be 100% accurate or up-to-date, and users should verify information with official sources when necessary.
