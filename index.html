@@ -1975,9 +1975,7 @@
           openingPopupCount--;
           if (openingPopupCount <= 0) {
             openingPopupCount = 0;
-            const center = map.getCenter();
-            const zoom = map.getZoom();
-            const newHash = `#map=${zoom.toFixed(2)}/${center.lat.toFixed(6)}/${center.lng.toFixed(6)}`;
+            const newHash = window.location.hash.replace(/[&?]poi=[^&]+/, '');
             window.history.replaceState(null, '', newHash);
           }
         });
