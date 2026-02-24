@@ -33,7 +33,7 @@ HTML/JS/CSS: Updated at 3 AM (UTC+8) daily, or as needed. (Source: This GitHub R
 
 This repository contains all the necessary files, configuration, scripts, and resources to deploy and customize the BNBU campus map.
 
-The project are powered by TileServer GL, Mapbox GL JS, OSM Liberty Style, Openmaptiles, and OpenStreetMap data.  
+The project are powered by Waline, Vercel, TileServer GL, Mapbox GL JS, OSM Liberty Style, Openmaptiles, and OpenStreetMap data.  
 (So these are the config files for mutiple different programs, not a complete program by itself.)  
 (This means that you need to have these programs installed and configured properly by the config files in this repo in order to run the BNBU campus map.)
 
