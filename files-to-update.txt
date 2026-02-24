@@ -22,3 +22,7 @@ update-from-github.bat
 
 # 更新文件列表配置（可选）
 files-to-update.txt
+
+# PWA 配置文件
+manifest.json
+sw.js

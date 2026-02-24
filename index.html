@@ -5,6 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="description" content="BNBU Campus Map — Interactive map of Beijing Normal-Hong Kong Baptist University. Explore buildings, facilities and points of interest (POI) on campus. BNBU 校园地图，提供校园建筑、设施及兴趣点的搜索与导览。">
   <title>BNBU Map | BNBU 校园地图</title>
+  <!-- PWA -->
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" href="/favicon.ico">
+  <meta name="theme-color" content="#1a73e8">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="BNBU Map">
+  <link rel="apple-touch-icon" href="/favicon.ico">
   <link href="https://unpkg.com/maplibre-gl@3.6.0/dist/maplibre-gl.css" rel="stylesheet" />
   <script src="https://unpkg.com/maplibre-gl@3.6.0/dist/maplibre-gl.js"></script>
   <script src="https://unpkg.com/pinyin-pro@3.19.6/dist/index.js"></script>
@@ -2507,6 +2516,17 @@
       console.error('加载 POI.json 文件失败:', err);
       alert('无法加载 POI.json 文件,请确保文件与 HTML 在同一目录下');
     });
+</script>
+
+<script>
+  // 注册 Service Worker（PWA 离线支持）
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js')
+        .then(reg => console.log('[SW] 注册成功，scope:', reg.scope))
+        .catch(err => console.warn('[SW] 注册失败:', err));
+    });
+  }
 </script>
 </body>
 </html>

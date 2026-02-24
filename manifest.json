@@ -1,0 +1,28 @@
+{
+  "name": "BNBU Map | BNBU 校园地图",
+  "short_name": "BNBU Map",
+  "description": "Interactive campus map of Beijing Normal-Hong Kong Baptist University. BNBU 校园互动地图。",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#ffffff",
+  "theme_color": "#1a73e8",
+  "lang": "zh-CN",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "any",
+      "type": "image/x-icon",
+      "purpose": "any"
+    }
+  ],
+  "categories": ["navigation", "education"],
+  "shortcuts": [
+    {
+      "name": "搜索地点",
+      "short_name": "搜索",
+      "url": "/?action=search",
+      "description": "搜索校园内的建筑和设施"
+    }
+  ]
+}
