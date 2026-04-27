@@ -2,11 +2,11 @@
 // Strategies:
 //   App shell + static assets  → Cache First (长期缓存)
 //   POI.json                   → Stale While Revalidate (后台刷新)
-//   Map tiles                  → Cache First + 配额限制
+//   Map tiles                  → Stale While Revalidate + 配额限制（后台更新，保证服务器新版本可刷新）
 //   CDN 第三方资源              → Cache First (按版本缓存)
 //   /api/*                     → Network First (降级至缓存)
 
-const CACHE_VERSION = 'v2';
+const CACHE_VERSION = 'v2.1';
 const SHELL_CACHE   = `shell-${CACHE_VERSION}`;
 const TILE_CACHE    = `tiles-${CACHE_VERSION}`;
 const CDN_CACHE     = `cdn-${CACHE_VERSION}`;
@@ -61,8 +61,9 @@ self.addEventListener('fetch', event => {
   }
 
   // 地图瓦片（pbf / png / 矢量瓦片服务）
+  // 使用 Stale While Revalidate：立即返回缓存同时后台更新，确保服务器新版本能刷新
   if (isTileRequest(url)) {
-    event.respondWith(cacheFirstWithLimit(request, TILE_CACHE, MAX_TILE_ENTRIES));
+    event.respondWith(staleWhileRevalidateWithLimit(request, TILE_CACHE, MAX_TILE_ENTRIES));
     return;
   }
 
@@ -98,32 +99,58 @@ async function cacheFirst(request, cacheName) {
   }
 }
 
-/** Cache First + 超出配额时删除最旧条目 */
-async function cacheFirstWithLimit(request, cacheName, maxEntries) {
+/** Stale While Revalidate + 超出配额时删除最旧条目
+ *  立即返回缓存（若有），同时后台请求网络并更新缓存，
+ *  确保服务器有新版本时下次请求能获取最新瓦片。
+ *  传入 fetch event 时，会通过 event.waitUntil() 保持后台刷新继续执行。
+ */
+async function staleWhileRevalidateWithLimit(request, cacheName, maxEntries, event) {
   const cache = await caches.open(cacheName);
   const cached = await cache.match(request);
-  if (cached) return cached;
-  try {
-    const response = await fetch(request);
-    if (response.ok) {
-      cache.put(request, response.clone());
-      trimCache(cacheName, maxEntries); // 异步清理，不阻塞响应
+  const updatePromise = (async () => {
+    try {
+      const response = await fetch(request);
+      if (response.ok) {
+        await cache.put(request, response.clone());
+        await trimCache(cacheName, maxEntries);
+      }
+      return response;
+    } catch {
+      return null;
     }
-    return response;
-  } catch {
-    return new Response('Tile unavailable offline', { status: 503 });
+  })();
+
+  if (event && typeof event.waitUntil === 'function') {
+    event.waitUntil(updatePromise.catch(() => null));
   }
+
+  // 有缓存时立即返回，后台更新；无缓存时等待网络
+  return cached || await updatePromise || new Response('Tile unavailable offline', { status: 503 });
 }
 
-/** Stale While Revalidate：立即返回缓存同时后台更新 */
-async function staleWhileRevalidate(request, cacheName) {
+/** Stale While Revalidate：立即返回缓存同时后台更新
+ *  传入 fetch event 时，会通过 event.waitUntil() 保持后台刷新继续执行。
+ */
+async function staleWhileRevalidate(request, cacheName, event) {
   const cache = await caches.open(cacheName);
   const cached = await cache.match(request);
-  const fetchPromise = fetch(request).then(response => {
-    if (response.ok) cache.put(request, response.clone());
-    return response;
-  }).catch(() => null);
-  return cached || await fetchPromise || new Response('Offline', { status: 503 });
+  const updatePromise = (async () => {
+    try {
+      const response = await fetch(request);
+      if (response.ok) {
+        await cache.put(request, response.clone());
+      }
+      return response;
+    } catch {
+      return null;
+    }
+  })();
+
+  if (event && typeof event.waitUntil === 'function') {
+    event.waitUntil(updatePromise.catch(() => null));
+  }
+
+  return cached || await updatePromise || new Response('Offline', { status: 503 });
 }
 
 /** Network First：优先网络，失败时读缓存 */
