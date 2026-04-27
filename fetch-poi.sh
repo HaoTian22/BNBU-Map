@@ -4,7 +4,7 @@
 cd "$(dirname "$0")" || exit 1
 
 # Overpass API 端点
-OVERPASS_API="https://overpass.private.coffee/api/interpreter"
+OVERPASS_API="https://overpass-api.de/api/interpreter"
 
 # 输出文件
 OUTPUT_FILE="POI.json"
