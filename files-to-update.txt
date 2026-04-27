@@ -12,14 +12,12 @@ icon.png
 
 # POI 更新脚本
 fetch-poi.sh
-fetch-poi.bat
 
 # Overpass 查询配置
 Overpass.txt
 
 # GitHub 更新脚本（脚本会自动更新自己）
 update-from-github.sh
-update-from-github.bat
 
 # 更新文件列表配置（可选）
 files-to-update.txt
