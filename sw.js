@@ -6,7 +6,7 @@
 //   CDN 第三方资源              → Cache First (按版本缓存)
 //   /api/*                     → Network First (降级至缓存)
 
-const CACHE_VERSION = 'v2';
+const CACHE_VERSION = 'v2.1';
 const SHELL_CACHE   = `shell-${CACHE_VERSION}`;
 const TILE_CACHE    = `tiles-${CACHE_VERSION}`;
 const CDN_CACHE     = `cdn-${CACHE_VERSION}`;
