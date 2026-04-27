@@ -2,7 +2,7 @@
 // Strategies:
 //   App shell + static assets  → Cache First (长期缓存)
 //   POI.json                   → Stale While Revalidate (后台刷新)
-//   Map tiles                  → Cache First + 配额限制
+//   Map tiles                  → Stale While Revalidate + 配额限制（后台更新，保证服务器新版本可刷新）
 //   CDN 第三方资源              → Cache First (按版本缓存)
 //   /api/*                     → Network First (降级至缓存)
 
@@ -61,8 +61,9 @@ self.addEventListener('fetch', event => {
   }
 
   // 地图瓦片（pbf / png / 矢量瓦片服务）
+  // 使用 Stale While Revalidate：立即返回缓存同时后台更新，确保服务器新版本能刷新
   if (isTileRequest(url)) {
-    event.respondWith(cacheFirstWithLimit(request, TILE_CACHE, MAX_TILE_ENTRIES));
+    event.respondWith(staleWhileRevalidateWithLimit(request, TILE_CACHE, MAX_TILE_ENTRIES));
     return;
   }
 
@@ -98,21 +99,22 @@ async function cacheFirst(request, cacheName) {
   }
 }
 
-/** Cache First + 超出配额时删除最旧条目 */
-async function cacheFirstWithLimit(request, cacheName, maxEntries) {
+/** Stale While Revalidate + 超出配额时删除最旧条目
+ *  立即返回缓存（若有），同时后台请求网络并更新缓存，
+ *  确保服务器有新版本时下次请求能获取最新瓦片。
+ */
+async function staleWhileRevalidateWithLimit(request, cacheName, maxEntries) {
   const cache = await caches.open(cacheName);
   const cached = await cache.match(request);
-  if (cached) return cached;
-  try {
-    const response = await fetch(request);
+  const fetchPromise = fetch(request).then(response => {
     if (response.ok) {
       cache.put(request, response.clone());
       trimCache(cacheName, maxEntries); // 异步清理，不阻塞响应
     }
     return response;
-  } catch {
-    return new Response('Tile unavailable offline', { status: 503 });
-  }
+  }).catch(() => null);
+  // 有缓存时立即返回，后台更新；无缓存时等待网络
+  return cached || await fetchPromise || new Response('Tile unavailable offline', { status: 503 });
 }
 
 /** Stale While Revalidate：立即返回缓存同时后台更新 */
