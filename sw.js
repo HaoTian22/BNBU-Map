@@ -10,9 +10,11 @@ const CACHE_VERSION = 'v2.1';
 const SHELL_CACHE   = `shell-${CACHE_VERSION}`;
 const TILE_CACHE    = `tiles-${CACHE_VERSION}`;
 const CDN_CACHE     = `cdn-${CACHE_VERSION}`;
+const RUNTIME_CACHE = `runtime-${CACHE_VERSION}`;
 
 // 最多缓存的瓦片数量（每块约 20–100 KB，500 块约 10–50 MB）
-const MAX_TILE_ENTRIES = 500;
+const MAX_TILE_ENTRIES    = 500;
+const MAX_RUNTIME_ENTRIES = 200;
 
 // 应用 Shell：离线必须可用
 const SHELL_URLS = [
@@ -33,7 +35,7 @@ self.addEventListener('install', event => {
 
 // ─── Activate ─────────────────────────────────────────────────────────────────
 self.addEventListener('activate', event => {
-  const keep = [SHELL_CACHE, TILE_CACHE, CDN_CACHE];
+  const keep = [SHELL_CACHE, TILE_CACHE, CDN_CACHE, RUNTIME_CACHE];
   event.waitUntil(
     caches.keys()
       .then(keys => Promise.all(
@@ -63,7 +65,7 @@ self.addEventListener('fetch', event => {
   // 地图瓦片（pbf / png / 矢量瓦片服务）
   // 使用 Stale While Revalidate：立即返回缓存同时后台更新，确保服务器新版本能刷新
   if (isTileRequest(url)) {
-    event.respondWith(staleWhileRevalidateWithLimit(request, TILE_CACHE, MAX_TILE_ENTRIES));
+    event.respondWith(staleWhileRevalidateWithLimit(request, TILE_CACHE, MAX_TILE_ENTRIES, event));
     return;
   }
 
@@ -75,7 +77,7 @@ self.addEventListener('fetch', event => {
 
   // POI.json → Stale While Revalidate
   if (url.pathname === '/POI.json') {
-    event.respondWith(staleWhileRevalidate(request, SHELL_CACHE));
+    event.respondWith(staleWhileRevalidate(request, SHELL_CACHE, event));
     return;
   }
 
@@ -92,7 +94,7 @@ async function cacheFirst(request, cacheName) {
   if (cached) return cached;
   try {
     const response = await fetch(request);
-    if (response.ok) cache.put(request, response.clone());
+    if (response.ok) await cache.put(request, response.clone());
     return response;
   } catch {
     return new Response('Offline', { status: 503 });
@@ -158,7 +160,7 @@ async function networkFirst(request, cacheName) {
   const cache = await caches.open(cacheName);
   try {
     const response = await fetch(request);
-    if (response.ok) cache.put(request, response.clone());
+    if (response.ok) await cache.put(request, response.clone());
     return response;
   } catch {
     const cached = await cache.match(request);
@@ -168,17 +170,25 @@ async function networkFirst(request, cacheName) {
 
 /** Cache First，找不到时降级到 /index.html（SPA 支持） */
 async function cacheFirstWithAppShellFallback(request) {
-  const cache = await caches.open(SHELL_CACHE);
-  const cached = await cache.match(request);
+  const shellCache = await caches.open(SHELL_CACHE);
+  const cached = await shellCache.match(request);
   if (cached) return cached;
+
+  const runtimeCache = await caches.open(RUNTIME_CACHE);
+  const runtimeCached = await runtimeCache.match(request);
+  if (runtimeCached) return runtimeCached;
+
   try {
     const response = await fetch(request);
-    if (response.ok) cache.put(request, response.clone());
+    if (response.ok) {
+      await runtimeCache.put(request, response.clone());
+      await trimCache(RUNTIME_CACHE, MAX_RUNTIME_ENTRIES);
+    }
     return response;
   } catch {
     // 导航请求离线时返回 App Shell
     if (request.mode === 'navigate') {
-      return cache.match('/index.html') || new Response('Offline', { status: 503 });
+      return shellCache.match('/index.html') || new Response('Offline', { status: 503 });
     }
     return new Response('Offline', { status: 503 });
   }
