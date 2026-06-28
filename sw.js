@@ -6,7 +6,7 @@
 //   CDN 第三方资源              → Cache First (按版本缓存)
 //   /api/*                     → Network First (降级至缓存)
 
-const CACHE_VERSION = 'v2.1';
+const CACHE_VERSION = 'v2.2';
 const SHELL_CACHE   = `shell-${CACHE_VERSION}`;
 const TILE_CACHE    = `tiles-${CACHE_VERSION}`;
 const CDN_CACHE     = `cdn-${CACHE_VERSION}`;
@@ -28,7 +28,15 @@ const SHELL_URLS = [
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(SHELL_CACHE)
-      .then(cache => cache.addAll(SHELL_URLS))
+      // 逐个缓存：单个资源（如频繁更新的 POI.json）失败不会导致整个 SW 安装失败
+      .then(cache => Promise.allSettled(
+        SHELL_URLS.map(url =>
+          cache.add(url).catch(err => {
+            console.warn('[SW] 预缓存失败:', url, err);
+            throw err;
+          })
+        )
+      ))
       .then(() => self.skipWaiting())
   );
 });
@@ -58,7 +66,21 @@ self.addEventListener('fetch', event => {
 
   // /api/* → Network First
   if (url.pathname.startsWith('/api/')) {
-    event.respondWith(networkFirst(request, SHELL_CACHE));
+    event.respondWith(networkFirst(request, RUNTIME_CACHE));
+    return;
+  }
+
+  // 导航请求（HTML 文档）→ Network First，离线时回退到缓存的 App Shell。
+  // 避免 Cache First 导致部署新版本后老用户长期停留在旧 index.html。
+  if (request.mode === 'navigate') {
+    event.respondWith(navigationNetworkFirst(request));
+    return;
+  }
+
+  // 地图样式 / sprite / glyphs（多为跨域瓦片服务器资源）→ Stale While Revalidate
+  // 这些资源随服务器更新而变化，不能 Cache First 永久缓存。
+  if (isMapStyleRequest(url)) {
+    event.respondWith(staleWhileRevalidate(request, CDN_CACHE, event));
     return;
   }
 
@@ -94,7 +116,11 @@ async function cacheFirst(request, cacheName) {
   if (cached) return cached;
   try {
     const response = await fetch(request);
-    if (response.ok) await cache.put(request, response.clone());
+    // response.ok 仅对带 CORS 的响应为 true；opaque（no-cors）响应 status 为 0，
+    // 但仍可缓存第三方库字节，作为缺少 crossorigin 时的兜底。
+    if (response.ok || response.type === 'opaque') {
+      await cache.put(request, response.clone());
+    }
     return response;
   } catch {
     return new Response('Offline', { status: 503 });
@@ -160,11 +186,30 @@ async function networkFirst(request, cacheName) {
   const cache = await caches.open(cacheName);
   try {
     const response = await fetch(request);
-    if (response.ok) await cache.put(request, response.clone());
+    if (response.ok) {
+      await cache.put(request, response.clone());
+      await trimCache(cacheName, MAX_RUNTIME_ENTRIES);
+    }
     return response;
   } catch {
     const cached = await cache.match(request);
     return cached || new Response('Offline', { status: 503 });
+  }
+}
+
+/** 导航请求 Network First：优先取最新 HTML，离线时回退缓存的 App Shell。
+ *  保证部署新版本后用户能拿到新页面，同时保留离线可用性。 */
+async function navigationNetworkFirst(request) {
+  const shellCache = await caches.open(SHELL_CACHE);
+  try {
+    const response = await fetch(request);
+    if (response.ok) await shellCache.put(request, response.clone());
+    return response;
+  } catch {
+    const cached = await shellCache.match(request);
+    return cached
+      || await shellCache.match('/index.html')
+      || new Response('Offline', { status: 503 });
   }
 }
 
@@ -210,6 +255,15 @@ function isCdnRequest(url) {
     url.hostname.includes('unpkg.com') ||
     url.hostname.includes('cdn.jsdelivr.net') ||
     url.hostname.includes('cdnjs.cloudflare.com')
+  );
+}
+
+/** 地图样式 / sprite / glyphs（字体）资源——随服务器更新，需后台刷新而非永久缓存 */
+function isMapStyleRequest(url) {
+  return (
+    /style\.json$/.test(url.pathname) ||
+    /\/sprites?\b/.test(url.pathname) ||
+    /\/(fonts|glyphs)\//.test(url.pathname)
   );
 }
 
