@@ -98,4 +98,18 @@ echo "[$TIMESTAMP] ✓ 文件大小: $FILE_SIZE"
 
 # 显示元素数量
 echo "[$TIMESTAMP] ✓ 元素数量: $ELEMENT_COUNT 个"
+
+# 生成 SEO 文件（sitemap.xml + poi-directory.html），失败不影响 POI 数据
+SEO_TS=$(date '+%Y-%m-%d %H:%M:%S')
+if command -v node >/dev/null 2>&1; then
+  echo "[$SEO_TS] 正在生成 SEO 文件 (sitemap.xml + poi-directory.html)..."
+  if node generate-seo.js; then
+    echo "[$SEO_TS] ✓ SEO 文件已更新"
+  else
+    echo "[$SEO_TS] ⚠ SEO 文件生成失败（不影响 POI 数据）"
+  fi
+else
+  echo "[$SEO_TS] ⚠ 未找到 node，跳过 SEO 文件生成"
+fi
+
 echo "[$TIMESTAMP] 更新完成"

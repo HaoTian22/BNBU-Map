@@ -1,4 +1,6 @@
 POI.json
+sitemap.xml
+poi-directory.html
 *.exe
 *.dll
 *.log

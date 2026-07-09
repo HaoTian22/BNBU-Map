@@ -5,6 +5,22 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="description" content="BNBU Campus Map — Interactive map of Beijing Normal-Hong Kong Baptist University. Explore buildings, facilities and points of interest (POI) on campus. BNBU 校园地图，提供校园建筑、设施及兴趣点的搜索与导览。">
   <title>BNBU Map | BNBU 校园地图</title>
+
+  <!-- SEO: canonical, Open Graph, Twitter Card -->
+  <link rel="canonical" href="https://u-map.haotian22.top/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="BNBU Map">
+  <meta property="og:title" content="BNBU Map | BNBU 校园地图">
+  <meta property="og:description" content="BNBU Campus Map — Interactive map of Beijing Normal-Hong Kong Baptist University. Explore buildings, facilities and points of interest (POI) on campus. BNBU 校园地图，提供校园建筑、设施及兴趣点的搜索与导览。">
+  <meta property="og:url" content="https://u-map.haotian22.top/">
+  <meta property="og:image" content="https://github.com/user-attachments/assets/2e67a00b-6643-4cf6-b852-9559dd854acb">
+  <meta property="og:locale" content="zh_CN">
+  <meta property="og:locale:alternate" content="en_US">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="BNBU Map | BNBU 校园地图">
+  <meta name="twitter:description" content="Interactive campus map of BNBU. BNBU 校园互动地图。">
+  <meta name="twitter:image" content="https://github.com/user-attachments/assets/2e67a00b-6643-4cf6-b852-9559dd854acb">
+
   <!-- PWA -->
   <link rel="manifest" href="/manifest.json">
   <link rel="icon" href="/favicon.ico">
@@ -822,6 +838,19 @@
 </head>
 <body>
   <h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;">BNBU Campus Map | BNBU 校园地图 — Beijing Normal-Hong Kong Baptist University Interactive Map</h1>
+
+  <!-- SEO: JS 禁用时的兜底内容，同时供爬虫读取 POI 文本入口 -->
+  <noscript>
+    <div style="position:fixed;inset:0;background:#f3f7fb;display:flex;align-items:center;justify-content:center;padding:24px;font-family:Arial,sans-serif;">
+      <div style="max-width:560px;background:#fff;border-radius:14px;padding:28px 32px;box-shadow:0 2px 12px rgba(0,0,0,0.1);text-align:center;">
+        <h2 style="margin:0 0 10px;color:#1f2937;">JavaScript Required / 需要 JavaScript</h2>
+        <p style="margin:0 0 6px;color:#4b5563;font-size:14px;">The interactive BNBU campus map requires JavaScript to render. BNBU 校园互动地图需要 JavaScript 才能显示。</p>
+        <p style="margin:0 0 16px;color:#4b5563;font-size:14px;">You can still browse all campus buildings, dormitories, restaurants, cafes, shops and facilities without JavaScript. 您仍可在不启用 JavaScript 的情况下浏览全部校园建筑、宿舍、餐厅、咖啡厅、商店与设施。</p>
+        <a href="poi-directory.html" style="display:inline-block;padding:12px 24px;background:#2563EB;color:#fff;text-decoration:none;border-radius:30px;font-size:14px;">View POI Directory / 查看地点目录</a>
+      </div>
+    </div>
+  </noscript>
+
 <!-- Cookie同意横幅 -->
 <div class="cookie-consent" id="cookie-consent">
   <div class="cookie-consent-content">

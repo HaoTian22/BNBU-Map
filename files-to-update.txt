@@ -25,3 +25,7 @@ files-to-update.txt
 # PWA 配置文件
 manifest.json
 sw.js
+
+# SEO：robots.txt 为静态文件；generate-seo.js 由 fetch-poi.sh 调用，在 VPS 本地生成 sitemap.xml 与 poi-directory.html
+robots.txt
+generate-seo.js
