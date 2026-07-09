@@ -207,7 +207,7 @@ const orgJsonLd = {
   '@context': 'https://schema.org',
   '@type': 'EducationalOrganization',
   name: 'Beijing Normal University-Hong Kong Baptist University (BNBU)',
-  alternateName: '北京师范大学-香港浸会大学联合国际学院',
+  alternateName: '北师香港浸会大学',
   url: SITE,
   logo: SITE + '/icon.png',
   sameAs: ['https://github.com/HaoTian22/BNBU-Map']
@@ -273,7 +273,7 @@ const html = `<!DOCTYPE html>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>BNBU Campus Map Directory | BNBU 校园地图地点目录</title>
-  <meta name="description" content="Complete directory of buildings, dormitories, restaurants, cafes, shops and facilities on the BNBU (Beijing Normal University-Hong Kong Baptist University) campus. 北京师范大学-香港浸会大学联合国际学院校园所有建筑、宿舍、餐厅、咖啡厅、商店与设施地点目录。">
+  <meta name="description" content="Complete directory of buildings, dormitories, restaurants, cafes, shops and facilities on the BNBU (Beijing Normal University-Hong Kong Baptist University) campus. 北师香港浸会大学校园所有建筑、宿舍、餐厅、咖啡厅、商店与设施地点目录。">
   <meta name="keywords" content="BNBU, BNBU map, BNBU campus map, 联合国际学院, 北师港浸大, 校园地图, BNBU dormitory, BNBU restaurant, UIC map">
   <link rel="canonical" href="${SITE}/poi-directory.html">
   <link rel="icon" href="/favicon.ico">
