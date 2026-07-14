@@ -9,6 +9,7 @@ privacy.html
 comments.html
 favicon.ico
 icon.png
+llms.txt
 
 # POI 更新脚本
 fetch-poi.sh

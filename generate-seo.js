@@ -3,8 +3,11 @@
 
 // BNBU Map — SEO 生成脚本
 // 读取 POI.json，生成：
-//   1. sitemap.xml         —— 站点地图（首页/目录/评论/隐私）
+//   1. sitemap.xml         —— 站点地图（首页/目录/poi.json/评论/隐私 + 每个 POI 独立页）
 //   2. poi-directory.html  —— 静态可索引的 POI 完整目录页（含 JSON-LD 结构化数据）
+//   3. poi.json            —— 小写副本（供 AI/机器直接读取，根路径）
+//   4. poi/<id>.html       —— 每个 POI 的独立静态页（含 Place JSON-LD + 营业时间解析）
+//   5. index.html noscript —— 注入 POI 摘要（供无 JS 爬虫/AI 读取）
 //
 // 分类与名称解析逻辑与 index.html 保持一致，确保目录页与地图显示口径相同。
 // 无第三方依赖，仅使用 node 内置 fs/path。
@@ -125,6 +128,85 @@ function esc(s) {
     .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
+// ===== 开放时间解析（OSM opening_hours → schema.org OpeningHoursSpecification）=====
+const DAY_MAP = { Mo: 'Monday', Tu: 'Tuesday', We: 'Wednesday', Th: 'Thursday', Fr: 'Friday', Sa: 'Saturday', Su: 'Sunday' };
+const DAY_ORDER = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
+
+function expandDays(dayStr) {
+  const result = [];
+  for (const part of dayStr.split(',')) {
+    const [a, b] = part.split('-').map(s => s.trim());
+    if (!b) {
+      if (DAY_MAP[a]) result.push(DAY_MAP[a]);
+    } else {
+      const ai = DAY_ORDER.indexOf(a);
+      const bi = DAY_ORDER.indexOf(b);
+      if (ai >= 0 && bi >= 0) {
+        for (let i = ai; i <= bi; i++) result.push(DAY_MAP[DAY_ORDER[i]]);
+      }
+    }
+  }
+  return result;
+}
+
+function parseOpeningHours(str) {
+  if (!str) return [];
+  // 去掉 OSM opening_hours 中的引号注释段，如 "teaching weeks 1-14"
+  const cleaned = str.replace(/"[^"]*"/g, '');
+  const specs = [];
+  const rules = cleaned.split(';').map(s => s.trim()).filter(Boolean);
+  for (const rule of rules) {
+    if (/\boff$/i.test(rule)) continue;
+    if (rule === '24/7') {
+      specs.push({ '@type': 'OpeningHoursSpecification', dayOfWeek: DAY_ORDER.map(d => DAY_MAP[d]), opens: '00:00', closes: '23:59' });
+      continue;
+    }
+    let days = DAY_ORDER.map(d => DAY_MAP[d]);
+    let timePart = rule;
+    const dayMatch = rule.match(/^([A-Za-z]{2}(?:-[A-Za-z]{2})?(?:,[A-Za-z]{2}(?:-[A-Za-z]{2})?)*)\s+(.+)$/);
+    if (dayMatch) {
+      const expanded = expandDays(dayMatch[1]);
+      if (expanded.length) days = expanded;
+      timePart = dayMatch[2];
+    }
+    if (/^(off|closed)$/i.test(timePart)) continue;
+    const timeRanges = timePart.split(',').map(s => s.trim()).filter(Boolean);
+    for (const tr of timeRanges) {
+      const tm = tr.match(/^(\d{2}:\d{2})\s*-\s*(\d{2}:\d{2})/);
+      if (tm) {
+        specs.push({ '@type': 'OpeningHoursSpecification', dayOfWeek: days, opens: tm[1], closes: tm[2] });
+      }
+    }
+  }
+  return specs;
+}
+
+// ===== schema.org 类型映射 =====
+function schemaType(catKey) {
+  const map = {
+    restaurant: 'Restaurant',
+    cafe: 'CafeOrCoffeeShop',
+    food_court: 'FoodEstablishment',
+    fast_food: 'FastFoodRestaurant',
+    shop: 'Store',
+    dormitory: 'Residence',
+    parking: 'ParkingFacility',
+    healthcare: 'MedicalOrganization',
+    tourism: 'TouristAttraction',
+    university: 'EducationalOrganization',
+    office: 'LocalBusiness',
+  };
+  return map[catKey] || 'Place';
+}
+
+// ===== 人类可读的营业时间（用于页面展示）=====
+function formatOpeningHours(str) {
+  if (!str) return '';
+  if (str === '24/7') return '24/7 (全天开放 / Open 24 hours)';
+  // 去掉 PH off, Sa-Su off 等尾部规则，保留主要时间
+  return str.replace(/;\s*PH\s+off/gi, '').replace(/;\s*Sa-Su\s+off/gi, '').trim() || str;
+}
+
 // ===== 读取并解析 POI =====
 let raw;
 try {
@@ -182,9 +264,14 @@ const ts = new Date().toISOString().slice(0, 10);
 const sitemapUrls = [
   { loc: SITE + '/', prio: '1.0', freq: 'daily' },
   { loc: SITE + '/poi-directory.html', prio: '0.9', freq: 'daily' },
+  { loc: SITE + '/poi.json', prio: '0.9', freq: 'daily' },
   { loc: SITE + '/comments.html', prio: '0.6', freq: 'daily' },
   { loc: SITE + '/privacy.html', prio: '0.3', freq: 'yearly' }
 ];
+// 为每个 POI 添加独立页面 URL
+pois.forEach(p => {
+  sitemapUrls.push({ loc: `${SITE}/poi/${p.id}.html`, prio: '0.5', freq: 'weekly' });
+});
 
 const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
@@ -398,3 +485,171 @@ ${sectionsHtml}
 
 fs.writeFileSync(path.join(DIR, 'poi-directory.html'), html, 'utf8');
 console.log(`✓ 已生成 poi-directory.html（${pois.length} 个 POI，${groupOrder.filter(gk => grouped[gk]).length} 个分组）`);
+
+// ===== 复制 POI.json → poi.json（站点根，小写，供 AI/机器读取）=====
+fs.copyFileSync(POI_FILE, path.join(DIR, 'poi.json'));
+console.log(`✓ 已复制 poi.json（${(fs.statSync(path.join(DIR, 'poi.json')).size / 1024).toFixed(1)} KB）`);
+
+// ===== 生成 per-POI 静态页 /poi/<id>.html =====
+const poiDir = path.join(DIR, 'poi');
+if (!fs.existsSync(poiDir)) fs.mkdirSync(poiDir, { recursive: true });
+
+let poiPageCount = 0;
+for (const p of pois) {
+  const stype = schemaType(p.catKey);
+  const ohSpecs = parseOpeningHours(p.props.opening_hours);
+  const mapUrl = `${SITE}/#poi=${p.id}`;
+  const canonical = `${SITE}/poi/${p.id}.html`;
+
+  // JSON-LD Place 对象
+  const placeLd = {
+    '@context': 'https://schema.org',
+    '@type': stype,
+    name: p.display,
+    url: canonical,
+    hasMap: mapUrl,
+    geo: { '@type': 'GeoCoordinates', latitude: p.lat, longitude: p.lon },
+    address: {
+      '@type': 'PostalAddress',
+      addressCountry: 'CN',
+      addressRegion: 'Guangdong',
+      addressLocality: 'Zhuhai',
+      streetAddress: 'BNBU Campus, Tangjiawan',
+    },
+  };
+  if (p.nameEn && p.nameZh) {
+    placeLd.alternateName = [p.nameEn, p.nameZh].filter(Boolean);
+  }
+  if (p.props.phone) placeLd.telephone = p.props.phone;
+  if (p.props.website) placeLd.sameAs = [p.props.website];
+  if (p.props.brand) placeLd.brand = { '@type': 'Brand', name: p.props.brand };
+  if (ohSpecs.length) placeLd.openingHoursSpecification = ohSpecs;
+
+  // 人类可读的属性列表
+  const detailRows = [];
+  detailRows.push(['Category / 类别', esc(p.catLabel)]);
+  detailRows.push(['Coordinates / 坐标', `${p.lat.toFixed(5)}, ${p.lon.toFixed(5)}`]);
+  if (p.props.amenity && p.props.amenity !== 'yes') detailRows.push(['Amenity / 设施类型', esc(p.props.amenity)]);
+  if (p.props.building && p.props.building !== 'yes') detailRows.push(['Building / 建筑类型', esc(p.props.building)]);
+  if (p.props.shop) detailRows.push(['Shop / 商店类型', esc(p.props.shop)]);
+  if (p.props.cuisine) detailRows.push(['Cuisine / 菜系', esc(p.props.cuisine)]);
+  if (p.props.brand) detailRows.push(['Brand / 品牌', esc(p.props.brand)]);
+  if (p.props.level || p.props['level:ref']) detailRows.push(['Floor / 楼层', esc(p.props['level:ref'] || p.props.level)]);
+  if (p.props.opening_hours) detailRows.push(['Opening Hours / 营业时间', esc(formatOpeningHours(p.props.opening_hours))]);
+  if (p.props.phone) detailRows.push(['Phone / 电话', esc(p.props.phone)]);
+  if (p.props.website) detailRows.push(['Website / 网站', `<a href="${esc(p.props.website)}" target="_blank" rel="noopener">${esc(p.props.website)}</a>`]);
+  if (p.props.wheelchair) detailRows.push(['Wheelchair / 无障碍', esc(p.props.wheelchair)]);
+  if (p.props.takeaway) detailRows.push(['Takeaway / 外带', esc(p.props.takeaway)]);
+
+  const detailsHtml = detailRows.map(r => `      <dt>${r[0]}</dt><dd>${r[1]}</dd>`).join('\n');
+
+  const poiHtml = `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${esc(p.display)} — BNBU Campus Map | BNBU 校园地图</title>
+  <meta name="description" content="${esc(p.display)} on the BNBU campus. ${esc(p.catLabel)} at coordinates ${p.lat.toFixed(5)}, ${p.lon.toFixed(5)}${p.props.opening_hours ? '. Hours: ' + esc(formatOpeningHours(p.props.opening_hours)) : ''}. BNBU 校园地点。">
+  <link rel="canonical" href="${canonical}">
+  <link rel="icon" href="/favicon.ico">
+  <meta name="theme-color" content="#1a73e8">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="BNBU Map">
+  <meta property="og:title" content="${esc(p.display)} — BNBU Campus Map">
+  <meta property="og:description" content="${esc(p.catLabel)} on the BNBU campus. ${esc(p.catLabel)}，BNBU 校园地点。">
+  <meta property="og:url" content="${canonical}">
+  <meta property="og:locale" content="zh_CN">
+  <meta property="og:locale:alternate" content="en_US">
+  <script type="application/ld+json">${JSON.stringify(placeLd)}</script>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; background: #f3f7fb; font-family: Arial, -apple-system, sans-serif; color: #333; line-height: 1.6; }
+    .header { background: rgba(255,255,255,0.9); backdrop-filter: blur(10px); border-bottom: 1px solid #e5e7eb; padding: 14px 24px; display: flex; align-items: center; gap: 14px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,0.07); }
+    .header a { font-size: 13px; color: #2563EB; text-decoration: none; white-space: nowrap; padding: 6px 14px; background: #eff6ff; border: 1.5px solid #bfdbfe; border-radius: 30px; }
+    .header a:hover { background: #dbeafe; }
+    .container { max-width: 720px; margin: 0 auto; padding: 28px 20px 60px; }
+    .poi-card { background: white; border-radius: 14px; padding: 28px 30px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+    .poi-title { font-size: 26px; font-weight: bold; color: #1f2937; margin: 0 0 4px; }
+    .poi-cat-badge { display: inline-block; font-size: 12px; font-weight: 500; color: #fff; background: ${p.color}; padding: 4px 12px; border-radius: 20px; margin-bottom: 18px; }
+    dl { margin: 18px 0; }
+    dt { font-size: 13px; color: #6b7280; font-weight: 600; margin-top: 12px; }
+    dd { margin: 2px 0 0 0; font-size: 15px; color: #1f2937; }
+    .actions { margin-top: 24px; display: flex; gap: 10px; flex-wrap: wrap; }
+    .actions a { display: inline-block; padding: 11px 22px; border-radius: 30px; font-size: 14px; text-decoration: none; font-weight: 500; }
+    .btn-map { background: #2563EB; color: #fff; }
+    .btn-dir { background: #eff6ff; color: #2563EB; border: 1.5px solid #bfdbfe; }
+    .footer { text-align: center; font-size: 12px; color: #9ca3af; padding: 20px 0 0; }
+    .footer a { color: #2563EB; text-decoration: none; }
+    @media (max-width: 600px) { .header { padding: 10px 14px; } .container { padding: 18px 12px 48px; } .poi-card { padding: 20px 18px; } .poi-title { font-size: 22px; } }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <a href="/index.html#poi=${encodeURIComponent(p.id)}">← 地图 / Map</a>
+    <a href="/poi-directory.html">目录 / Directory</a>
+  </div>
+  <div class="container">
+    <div class="poi-card">
+      <h1 class="poi-title">${esc(p.display)}</h1>
+      <span class="poi-cat-badge">${esc(p.catLabel)}</span>
+      <dl>
+${detailsHtml}
+      </dl>
+      <div class="actions">
+        <a class="btn-map" href="/index.html#poi=${encodeURIComponent(p.id)}">📍 在地图上查看 / View on Map</a>
+        <a class="btn-dir" href="/poi-directory.html">📋 查看全部地点 / All POIs</a>
+      </div>
+    </div>
+    <div class="footer">
+      Map data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors (ODbL) ·
+      <a href="/index.html">互动地图</a> · <a href="/poi-directory.html">地点目录</a> · <a href="/privacy.html">隐私政策</a>
+    </div>
+  </div>
+</body>
+</html>
+`;
+
+  fs.writeFileSync(path.join(poiDir, `${p.id}.html`), poiHtml, 'utf8');
+  poiPageCount++;
+}
+console.log(`✓ 已生成 ${poiPageCount} 个 per-POI 静态页（/poi/<id>.html）`);
+
+// ===== 注入 noscript POI 摘要到 index.html =====
+const indexFile = path.join(DIR, 'index.html');
+const BEGIN = '<!-- BEGIN AI-READABLE SUMMARY (auto-generated by generate-seo.js, do not edit between markers) -->';
+const END = '<!-- END AI-READABLE SUMMARY -->';
+
+// 构建分类摘要表
+const categorySummary = groupOrder
+  .filter(gk => grouped[gk] && grouped[gk].length)
+  .map(gk => {
+    const g = categoryGroups[gk];
+    const items = grouped[gk];
+    const itemLinks = items.map(p =>
+      `<li><a href="poi/${p.id}.html">${esc(p.display)}</a> <span style="color:#9ca3af;font-size:12px">${p.lat.toFixed(4)},${p.lon.toFixed(4)}</span></li>`
+    ).join('');
+    return `      <h3 style="margin:18px 0 6px;font-size:15px;color:#1f2937;">${esc(g.label)} (${items.length})</h3>
+      <ul style="margin:0;padding-left:20px;columns:2;column-gap:24px;font-size:13px;color:#4b5563;">
+${itemLinks}
+      </ul>`;
+  }).join('\n');
+
+const summaryHtml = `${BEGIN}
+        <hr style="border:none;border-top:1px solid #e5e7eb;margin:20px 0;">
+        <h3 style="margin:0 0 8px;font-size:16px;color:#1f2937;">Campus POI Summary / 校园地点摘要 (${pois.length} locations)</h3>
+        <p style="font-size:13px;color:#6b7280;margin:0 0 12px;">Beijing Normal University-Hong Kong Baptist University (BNBU), Tangjiawan, Zhuhai, Guangdong, China. Center: 22.352, 113.515. All ${pois.length} points of interest listed below; click any name for details. 北师香港浸会大学校园全部 ${pois.length} 个地点列表如下。</p>
+${categorySummary}
+        <hr style="border:none;border-top:1px solid #e5e7eb;margin:20px 0;">
+        <p style="font-size:12px;color:#9ca3af;">Machine-readable data: <a href="poi.json">poi.json</a> · Full directory: <a href="poi-directory.html">poi-directory.html</a></p>
+${END}`;
+
+let indexContent = fs.readFileSync(indexFile, 'utf8');
+const beginIdx = indexContent.indexOf(BEGIN);
+const endIdx = indexContent.indexOf(END);
+if (beginIdx >= 0 && endIdx >= 0 && endIdx > beginIdx) {
+  indexContent = indexContent.slice(0, beginIdx) + summaryHtml + indexContent.slice(endIdx + END.length);
+  fs.writeFileSync(indexFile, indexContent, 'utf8');
+  console.log(`✓ 已注入 noscript POI 摘要到 index.html（${pois.length} 个地点）`);
+} else {
+  console.warn('⚠ 未找到 index.html 中的 AI-READABLE SUMMARY 标记，跳过注入');
+}

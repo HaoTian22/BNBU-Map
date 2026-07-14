@@ -1,5 +1,8 @@
 User-agent: *
 Allow: /
+Allow: /poi.json
+Allow: /poi/
+Allow: /llms.txt
 Disallow: /api/
 
 Sitemap: https://u-map.haotian22.top/sitemap.xml

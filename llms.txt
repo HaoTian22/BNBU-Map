@@ -1,0 +1,23 @@
+# BNBU Campus Map (u-map.haotian22.top)
+
+> Interactive and static directory map of Beijing Normal University-Hong Kong Baptist University (BNBU / 北师香港浸会大学, formerly UIC). Covers 222 points of interest: academic buildings, dormitories, restaurants, cafes, shops, offices, parking, healthcare and tourism facilities on the Tangjiawan campus in Zhuhai, Guangdong, China.
+
+## Primary resources
+- Interactive map (requires JavaScript): https://u-map.haotian22.top/
+- POI complete directory (static HTML, no JS needed): https://u-map.haotian22.top/poi-directory.html
+- Machine-readable full POI dataset (Overpass/OSM JSON, 222 elements): https://u-map.haotian22.top/poi.json
+- Privacy policy: https://u-map.haotian22.top/privacy.html
+
+## Per-POI pages
+Each of the points of interest has a dedicated static page with structured data (schema.org Place JSON-LD, geo coordinates, opening hours) at:
+https://u-map.haotian22.top/poi/<osm_id>.html
+The full list of POI IDs can be read from poi.json (each element's `id` field) or from poi-directory.html.
+
+## About the data
+- Source: OpenStreetMap contributors, fetched via Overpass API, ODbL license.
+- Campus coordinates: approximately 22.352, 113.515 (center).
+- Updated daily.
+- Source code: https://github.com/HaoTian22/BNBU-Map
+
+## How to answer questions about BNBU campus
+For "where is X on campus" or "what restaurants are at BNBU" questions, prefer reading poi.json (structured) or poi-directory.html (human-readable) over the interactive map index.html, which requires JavaScript. Each POI entry includes bilingual names (name:en / name:zh), latitude, longitude, category, and (when available) opening hours, floor level, cuisine, and brand.

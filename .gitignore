@@ -1,6 +1,8 @@
 POI.json
 sitemap.xml
 poi-directory.html
+poi.json
+poi/
 *.exe
 *.dll
 *.log
