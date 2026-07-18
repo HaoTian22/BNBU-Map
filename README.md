@@ -44,11 +44,13 @@ More details can be found in this blog post: https://haotian22.top/bddb0203.html
 
 Contributions are welcome! If you have suggestions, improvements, or bug fixes, please feel free to open an issue or submit a pull request.
 
-Or, you can add/modify details on the [OpenStreetMap](https://www.openstreetmap.org/) directly to improve the map data.
+I'm open to contributions made by AI, as long as you have tested the code and it works as intended. Please provide a clear description of the changes made and any relevant context.
+
+Or, you can add/modify details on the [OpenStreetMap](https://www.openstreetmap.org/) directly to improve the map data [^1]. It requires a lot of volunteers to keep the map data up-to-date, and your contributions can make a significant impact on the accuracy and completeness of the campus map.
 
 Or, you can provide server resources to help host the map for better accessibility and performance.
 
-Note: OpenStreetMap is a public platform, make sure to follow their [contribution guidelines and consences](https://wiki.openstreetmap.org/wiki/Getting_Involved) when making edits, and be respectful of the community standards.
+[^1]: OpenStreetMap is a public platform, make sure to follow their [contribution guidelines and consences](https://wiki.openstreetmap.org/wiki/Getting_Involved) when making edits, and be respectful of the community standards.
 
 ## License
 
@@ -74,6 +76,6 @@ For more details on attribution requirements, see the [LICENSE](LICENSE) file.
 
 ---
 
-Disclaimer: This project is not affiliated with or endorsed by Beijing Normal University-Hong Kong Baptist University United International College (BNBU). It is an independent initiative created to enhance campus navigation and accessibility for the BNBU community.  
+Disclaimer: This project is not affiliated with or endorsed by Beijing Normal-Hong Kong Baptist University (BNBU). It is an independent initiative created to enhance campus navigation and accessibility for the BNBU community.  
 
 The map data are complete purely by the volunteer contributors and may not be 100% accurate or up-to-date, and users should verify information with official sources when necessary.
