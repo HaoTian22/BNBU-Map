@@ -302,6 +302,23 @@
     if (props.emergency === 'fire_hydrant' && !props.name) {
       props['name:en'] = 'Fire Hydrant'; props['name:zh'] = '消防栓'; props.name = 'Fire Hydrant';
     }
+    if (props.amenity === 'atm') {
+      const genericAtmNames = new Set(['atm', 'cash machine', 'cashpoint', '自动取款机', '自动柜员机']);
+      const isGenericName = value => !value || genericAtmNames.has(String(value).trim().toLowerCase());
+      const operator = props.operator || '';
+      const brand = props.brand || '';
+      const bankEn = props['operator:en'] || props['brand:en'] ||
+        (!/[㐀-鿿]/.test(operator) ? operator : '') ||
+        (!/[㐀-鿿]/.test(brand) ? brand : '') || props.network || '';
+      const bankZh = props['operator:zh'] || props['brand:zh'] ||
+        (/[㐀-鿿]/.test(operator) ? operator : '') ||
+        (/[㐀-鿿]/.test(brand) ? brand : '');
+      if (bankEn || bankZh) {
+        if (isGenericName(props['name:en'])) props['name:en'] = bankEn;
+        if (isGenericName(props['name:zh'])) props['name:zh'] = bankZh;
+        if (isGenericName(props.name)) props.name = props['name:zh'] || (props['name:en'] ? '' : bankEn || bankZh);
+      }
+    }
     const nameEn = props['name:en'];
     const nameZh = props['name:zh'] || props.name;
     if (nameEn && nameZh) return nameEn + ' / ' + nameZh;

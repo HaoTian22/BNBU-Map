@@ -1,12 +1,12 @@
 // BNBU Map — Service Worker
 // Strategies:
 //   App shell + static assets  → Cache First (长期缓存)
-//   POI.json                   → Stale While Revalidate (后台刷新)
+//   POI.json                   → Network First（优先最新数据，离线时回退缓存）
 //   Map tiles                  → Stale While Revalidate + 配额限制（后台更新，保证服务器新版本可刷新）
 //   CDN 第三方资源              → Cache First (按版本缓存)
 //   /api/*                     → Network First (降级至缓存)
 
-const CACHE_VERSION = 'v2.2';
+const CACHE_VERSION = 'v2.3';
 const SHELL_CACHE   = `shell-${CACHE_VERSION}`;
 const TILE_CACHE    = `tiles-${CACHE_VERSION}`;
 const CDN_CACHE     = `cdn-${CACHE_VERSION}`;
@@ -97,9 +97,9 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // POI.json → Stale While Revalidate
+  // POI.json → Network First，确保地图优先使用最新名称；离线时回退缓存
   if (url.pathname === '/POI.json') {
-    event.respondWith(staleWhileRevalidate(request, SHELL_CACHE, event));
+    event.respondWith(networkFirst(request, SHELL_CACHE));
     return;
   }
 

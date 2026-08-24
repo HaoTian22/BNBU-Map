@@ -81,6 +81,28 @@ function groupKey(catKey) {
   return 'default';
 }
 
+const genericAtmNames = new Set(['atm', 'cash machine', 'cashpoint', '自动取款机', '自动柜员机']);
+
+function applyAtmBankName(props) {
+  if (props.amenity !== 'atm') return;
+
+  const isGenericName = value => !value || genericAtmNames.has(String(value).trim().toLowerCase());
+  const operator = props.operator || '';
+  const brand = props.brand || '';
+  const bankEn = props['operator:en'] || props['brand:en'] ||
+    (!/[㐀-鿿]/.test(operator) ? operator : '') ||
+    (!/[㐀-鿿]/.test(brand) ? brand : '') ||
+    props.network || '';
+  const bankZh = props['operator:zh'] || props['brand:zh'] ||
+    (/[㐀-鿿]/.test(operator) ? operator : '') ||
+    (/[㐀-鿿]/.test(brand) ? brand : '');
+
+  if (!bankEn && !bankZh) return;
+  if (isGenericName(props['name:en'])) props['name:en'] = bankEn;
+  if (isGenericName(props['name:zh'])) props['name:zh'] = bankZh;
+  if (isGenericName(props.name)) props.name = props['name:zh'] || (props['name:en'] ? '' : bankEn || bankZh);
+}
+
 // 应用特殊名称处理（与 index.html 一致）
 function applySpecialNames(props) {
   const p = Object.assign({}, props);
@@ -111,6 +133,7 @@ function applySpecialNames(props) {
   if (p.emergency === 'fire_hydrant' && !p.name) {
     p['name:en'] = 'Fire Hydrant'; p['name:zh'] = '消防栓'; p.name = 'Fire Hydrant';
   }
+  applyAtmBankName(p);
   return p;
 }
 
@@ -534,6 +557,7 @@ for (const p of pois) {
   if (p.props.shop) detailRows.push(['Shop / 商店类型', esc(p.props.shop)]);
   if (p.props.cuisine) detailRows.push(['Cuisine / 菜系', esc(p.props.cuisine)]);
   if (p.props.brand) detailRows.push(['Brand / 品牌', esc(p.props.brand)]);
+  if (p.props.operator) detailRows.push(['Operator / 运营方', esc(p.props.operator)]);
   if (p.props.level || p.props['level:ref']) detailRows.push(['Floor / 楼层', esc(p.props['level:ref'] || p.props.level)]);
   if (p.props.opening_hours) detailRows.push(['Opening Hours / 营业时间', esc(formatOpeningHours(p.props.opening_hours))]);
   if (p.props.phone) detailRows.push(['Phone / 电话', esc(p.props.phone)]);
