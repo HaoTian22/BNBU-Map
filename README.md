@@ -17,7 +17,7 @@ Features include:
 - Comment system for users to share feedback and suggestions.
 - Beautiful Acrylic UI
 
-<img width="2488" height="1421" alt="image" src="https://github.com/user-attachments/assets/2e67a00b-6643-4cf6-b852-9559dd854acb" />
+<img width="2310" height="1311" alt="Screenshot_17-10-2026_131916_u-map haotian22 top" src="https://github.com/user-attachments/assets/ec069b2c-603d-48da-b6d3-f9ce043eb9e9" />
 <img width="1812" height="925" alt="image" src="https://github.com/user-attachments/assets/97ae8fd0-00ea-48ac-83a4-d6a2f7318486" />
 
 
