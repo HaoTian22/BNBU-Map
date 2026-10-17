@@ -793,17 +793,6 @@
       animation: popupFadeOut 0.2s ease-in forwards;
     }
 
-    /* 标记显示/隐藏动画 */
-    .maplibregl-marker {
-      transition: opacity 0.2s ease;
-      opacity: 1;
-    }
-
-    .maplibregl-marker.marker-hidden {
-      opacity: 0;
-      pointer-events: none;
-    }
-
     @keyframes pulse {
       0%, 100% { opacity: 1; }
       50% { opacity: 0.5; }
@@ -1811,7 +1800,7 @@
           });
           
           setTimeout(() => {
-            targetPOI.marker.togglePopup();
+            openPoi(targetPOI.index);
           }, 1000);
         }, 500);
       }
@@ -2096,37 +2085,37 @@
     }
   });
 
-  // 分类颜色配置
+  // 分类颜色配置（同一分组共用一种颜色，与地图图标、筛选按钮一致）
   const categoryColors = {
     // 建筑物
-    dormitory: { color: '#60A5FA', label: 'Dormitory / 宿舍楼' },
-    university: { color: '#2563EB', label: 'Academic Building / 教学楼' },
-    building_other: { color: '#94A3B8', label: 'Other Building / 其他建筑' },
+    dormitory: { color: '#4F6BED', label: 'Dormitory / 宿舍楼' },
+    university: { color: '#4F6BED', label: 'Academic Building / 教学楼' },
+    building_other: { color: '#4F6BED', label: 'Other Building / 其他建筑' },
     
     // 餐饮
-    restaurant: { color: '#EF4444', label: 'Restaurant / 餐厅' },
-    cafe: { color: '#F87171', label: 'Cafe / 咖啡厅' },
-    food_court: { color: '#DC2626', label: 'Food Court / 食堂' },
-    fast_food: { color: '#FCA5A5', label: 'Fast Food / 快餐' },
+    restaurant: { color: '#F57C00', label: 'Restaurant / 餐厅' },
+    cafe: { color: '#F57C00', label: 'Cafe / 咖啡厅' },
+    food_court: { color: '#F57C00', label: 'Food Court / 食堂' },
+    fast_food: { color: '#F57C00', label: 'Fast Food / 快餐' },
     
     // 商店
-    shop: { color: '#F59E0B', label: 'Shop / 商店' },
+    shop: { color: '#E0A100', label: 'Shop / 商店' },
     
     // 办公室
     office: { color: '#8B5CF6', label: 'Office / 办公室' },
     
     // 设施服务
-    amenity: { color: '#10B981', label: 'Amenity / 设施' },
-    parking: { color: '#059669', label: 'Parking / 停车' },
+    amenity: { color: '#0EA371', label: 'Amenity / 设施' },
+    parking: { color: '#0EA371', label: 'Parking / 停车' },
     
     // 医疗
-    healthcare: { color: '#EC4899', label: 'Healthcare / 医疗' },
+    healthcare: { color: '#E5484D', label: 'Healthcare / 医疗' },
     
     // 旅游文化
-    tourism: { color: '#14B8A6', label: 'Tourism / 旅游' },
+    tourism: { color: '#14A3B8', label: 'Tourism / 旅游' },
     
     // 休闲娱乐
-    leisure: { color: '#F97316', label: 'Leisure / 休闲' },
+    leisure: { color: '#D946EF', label: 'Leisure / 休闲' },
     
     // 默认
     default: { color: '#6B7280', label: 'POI / 地点' }
@@ -2225,8 +2214,13 @@
   generateCategoryItems();
 
   // 存储所有标记点
-  const markers = [];
-  const markerData = []; // 存储标记点的详细数据用于搜索
+  const markerData = []; // 存储标记点的详细数据（含弹窗），用于搜索与图层交互
+  const poiFeatures = []; // 地图 POI 图层的 GeoJSON 要素
+  // 存储每个分组的选中状态
+  const groupStates = {};
+  Object.keys(categoryGroups).forEach(group => {
+    groupStates[group] = true; // 初始都是选中状态
+  });
   let openingPopupCount = 0; // 当前打开的POI数量，>0时关闭不移除URL中的poi参数
   
   // 使用 pinyin-pro 库进行拼音转换
@@ -2308,6 +2302,240 @@
     
     // 默认
     return categoryColors.default;
+  }
+
+  // ======== POI 图层（MapLibre symbol layer） ========
+  // 分级显示：1 始终显示；2 放大到 17 级；3 放大到 18 级（小型设施）
+  const POI_TIER_MINZOOM = { 1: 0, 2: 17, 3: 18 };
+  const POI_LAYERS = ['poi-tier-3', 'poi-tier-2', 'poi-tier-1', 'poi-selected'];
+  let selectedPoi = null;
+
+  // 双语名称：英文在上，中文较小在下；只有一种名称时只显示一行
+  const POI_LABEL = ['case',
+    ['all',
+      ['!=', ['get', 'nameEn'], ''],
+      ['!=', ['get', 'nameZh'], ''],
+      ['!=', ['get', 'nameEn'], ['get', 'nameZh']]
+    ],
+    ['format', ['get', 'nameEn'], {}, '\n', {}, ['get', 'nameZh'], { 'font-scale': 0.85 }],
+    ['!=', ['get', 'nameEn'], ''], ['get', 'nameEn'],
+    ['get', 'nameZh']
+  ];
+
+  function getPoiTier(props, categoryKey) {
+    const minor = ['parking_entrance', 'waste_disposal', 'waste_transfer_station', 'bicycle_parking', 'recycling'];
+    if (props.emergency || minor.includes(props.amenity)) return 3;
+    if (['university', 'dormitory', 'building_other', 'food_court', 'leisure'].includes(categoryKey)) return 1;
+    return 2;
+  }
+
+  function getPoiGroup(categoryKey) {
+    return Object.keys(categoryGroups).find(g => categoryGroups[g].categories.includes(categoryKey)) || 'default';
+  }
+
+  // 从 Font Awesome 样式中读取图标字符，避免硬编码 unicode
+  function getFaGlyph(name) {
+    const el = document.createElement('i');
+    el.className = `fa-solid fa-${name}`;
+    el.style.position = 'absolute';
+    el.style.visibility = 'hidden';
+    document.body.appendChild(el);
+    const content = getComputedStyle(el, '::before').content;
+    el.remove();
+    return content && content !== 'none' ? content.replace(/["']/g, '') : '';
+  }
+
+  // 用 canvas 绘制图标：圆形（常规）或大头针（选中）
+  function drawPoiIcon(color, glyph, pin) {
+    const ratio = 2;
+    const w = pin ? 38 : 28;
+    const h = pin ? 48 : 28;
+    const r = pin ? 16 : 11;
+    const cx = w / 2;
+    const cy = pin ? 19 : h / 2;
+    const canvas = document.createElement('canvas');
+    canvas.width = w * ratio;
+    canvas.height = h * ratio;
+    const ctx = canvas.getContext('2d');
+    ctx.scale(ratio, ratio);
+
+    ctx.beginPath();
+    if (pin) {
+      // 圆头 + 底部尖角
+      ctx.arc(cx, cy, r + 1.5, Math.PI * 0.8, Math.PI * 0.2);
+      ctx.lineTo(cx, h - 2);
+      ctx.closePath();
+    } else {
+      ctx.arc(cx, cy, r + 1.5, 0, Math.PI * 2);
+    }
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+    ctx.shadowBlur = 3;
+    ctx.shadowOffsetY = 1;
+    ctx.fillStyle = '#ffffff';
+    ctx.fill();
+    ctx.shadowColor = 'transparent';
+
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.fillStyle = color;
+    ctx.fill();
+
+    if (glyph) {
+      ctx.fillStyle = '#ffffff';
+      ctx.font = `900 ${pin ? 15 : 11}px "Font Awesome 6 Free"`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(glyph, cx, cy + 0.5);
+    }
+    return { image: ctx.getImageData(0, 0, canvas.width, canvas.height), ratio };
+  }
+
+  async function addPoiIcons() {
+    try { await document.fonts.load('900 16px "Font Awesome 6 Free"'); } catch (e) {}
+    Object.keys(categoryGroups).forEach(group => {
+      const color = categoryColors[categoryGroups[group].categories[0]].color;
+      const glyph = getFaGlyph(categoryIcons[group] || categoryIcons.default);
+      [['poi-', false], ['poi-pin-', true]].forEach(([prefix, pin]) => {
+        const { image, ratio } = drawPoiIcon(color, glyph, pin);
+        if (map.hasImage(prefix + group)) map.removeImage(prefix + group);
+        map.addImage(prefix + group, image, { pixelRatio: ratio });
+      });
+    });
+  }
+
+  function poiTierFilter(tier) {
+    const visible = Object.keys(groupStates).filter(g => groupStates[g]);
+    return ['all',
+      ['==', ['get', 'tier'], tier],
+      ['in', ['get', 'group'], ['literal', visible]],
+      ['!=', ['get', 'index'], selectedPoi ?? -1]
+    ];
+  }
+
+  function refreshPoiFilters() {
+    if (!map.getLayer('poi-selected')) return;
+    [1, 2, 3].forEach(tier => map.setFilter(`poi-tier-${tier}`, poiTierFilter(tier)));
+    map.setFilter('poi-selected', ['==', ['get', 'index'], selectedPoi ?? -1]);
+  }
+
+  function setSelectedPoi(index) {
+    selectedPoi = index;
+    refreshPoiFilters();
+  }
+
+  // 文字颜色：分组颜色；白色描边保证在底图上可读
+  function poiTextColor() {
+    const pairs = [];
+    Object.keys(categoryGroups).forEach(group => {
+      pairs.push(group, categoryColors[categoryGroups[group].categories[0]].color);
+    });
+    return ['match', ['get', 'group'], ...pairs, '#6B7280'];
+  }
+
+  function addPoiLayers() {
+    map.addSource('poi', {
+      type: 'geojson',
+      data: { type: 'FeatureCollection', features: poiFeatures }
+    });
+
+    // 先添加低优先级图层：碰撞检测时上层（高优先级）先放置
+    [3, 2, 1].forEach(tier => {
+      map.addLayer({
+        id: `poi-tier-${tier}`,
+        type: 'symbol',
+        source: 'poi',
+        minzoom: POI_TIER_MINZOOM[tier],
+        filter: poiTierFilter(tier),
+        layout: {
+          'icon-image': ['concat', 'poi-', ['get', 'group']],
+          'icon-padding': 2,
+          // 17 级以上显示名称，名称放不下时只显示图标
+          'text-field': ['step', ['zoom'], '', 17, POI_LABEL],
+          'text-font': ['MiSans Semibold'],
+          'text-size': 12,
+          'text-max-width': 8,
+          'text-variable-anchor': ['left', 'right', 'top', 'bottom'],
+          'text-radial-offset': 1.1,
+          'text-justify': 'auto',
+          'text-optional': true,
+          'text-padding': 2
+        },
+        paint: {
+          'text-color': poiTextColor(),
+          'text-halo-color': 'rgba(255, 255, 255, 0.95)',
+          'text-halo-width': 1.5
+        }
+      });
+    });
+
+    // 选中的 POI：大头针 + 名称，始终显示
+    map.addLayer({
+      id: 'poi-selected',
+      type: 'symbol',
+      source: 'poi',
+      filter: ['==', ['get', 'index'], selectedPoi ?? -1],
+      layout: {
+        'icon-image': ['concat', 'poi-pin-', ['get', 'group']],
+        'icon-anchor': 'bottom',
+        // 允许重叠以保证始终显示，但仍占据碰撞空间，压住底图自带的 POI
+        'icon-allow-overlap': true,
+        'icon-ignore-placement': false,
+        'text-field': POI_LABEL,
+        'text-font': ['MiSans Semibold'],
+        'text-size': 13,
+        'text-anchor': 'top',
+        'text-offset': [0, 0.3],
+        'text-max-width': 10,
+        'text-allow-overlap': true,
+        'text-ignore-placement': false
+      },
+      paint: {
+        'text-color': poiTextColor(),
+        'text-halo-color': 'rgba(255, 255, 255, 0.95)',
+        'text-halo-width': 1.5
+      }
+    });
+
+    POI_LAYERS.forEach(id => {
+      map.on('click', id, e => {
+        // 多个图层同时命中时只处理一次
+        if (e.originalEvent._poiHandled) return;
+        e.originalEvent._poiHandled = true;
+        const data = markerData[e.features[0].properties.index];
+        if (!data || data.popup.isOpen()) return;
+
+        const center = map.getCenter();
+        const newHash = `#map=${map.getZoom().toFixed(2)}/${center.lat.toFixed(6)}/${center.lng.toFixed(6)}&poi=${data.poiId}`;
+        try {
+          window.history.replaceState(null, '', newHash);
+        } catch (err) {
+          // iOS Safari may throttle or reject replaceState; fall back to hash assignment
+          location.hash = newHash.replace(/^#/, '');
+        }
+
+        // GA4: POI点击事件
+        if (typeof gtag !== 'undefined') {
+          gtag('event', 'select_poi', {
+            poi_id: data.poiId,
+            poi_name: data.name,
+            poi_category: data.categoryLabel,
+            method: 'marker_click'
+          });
+        }
+
+        openPoi(data.index);
+      });
+      map.on('mouseenter', id, () => { map.getCanvas().style.cursor = 'pointer'; });
+      map.on('mouseleave', id, () => { map.getCanvas().style.cursor = ''; });
+    });
+  }
+
+  // 打开 POI 弹窗并高亮
+  function openPoi(index) {
+    const data = markerData[index];
+    if (!data) return;
+    if (!data.popup.isOpen()) data.popup.addTo(map);
+    setSelectedPoi(index);
   }
 
   // 从本地 POI.json 文件读取数据
@@ -2472,7 +2700,19 @@
         
         popupContent += '</div>';
 
-        const popup = new maplibregl.Popup({ maxWidth: '320px' }).setHTML(popupContent);
+        const index = markerData.length;
+        const popup = new maplibregl.Popup({
+          maxWidth: '320px',
+          focusAfterOpen: false,
+          // 选中时显示大头针，弹窗需避开其高度
+          offset: {
+            'top': [0, 4], 'top-left': [0, 4], 'top-right': [0, 4],
+            'bottom': [0, -46], 'bottom-left': [0, -46], 'bottom-right': [0, -46],
+            'left': [18, -24], 'right': [-18, -24]
+          }
+        })
+          .setLngLat([lon, lat])
+          .setHTML(popupContent);
 
         // 监听popup打开时加载评论数，并计数
         popup.on('open', () => {
@@ -2482,6 +2722,7 @@
         
         // 监听popup关闭事件，计数归零时移除URL中的poi参数
         popup.on('close', () => {
+          if (selectedPoi === index) setSelectedPoi(null);
           openingPopupCount--;
           if (openingPopupCount <= 0) {
             openingPopupCount = 0;
@@ -2519,52 +2760,28 @@
           return this;
         };
 
-        const marker = new maplibregl.Marker({
-          color: categoryInfo.color
-        })
-          .setLngLat([lon, lat])
-          .setPopup(popup)
-          .addTo(map);
-        
-        // 标记点添加点击事件以更新URL
-        marker.getElement().addEventListener('click', () => {
-          const center = map.getCenter();
-          const zoom = map.getZoom();
-          const newHash = `#map=${zoom.toFixed(2)}/${center.lat.toFixed(6)}/${center.lng.toFixed(6)}&poi=${poiId}`;
-          try {
-            window.history.replaceState(null, '', newHash);
-          } catch (e) {
-            // iOS Safari may throttle or reject replaceState; fall back to hash assignment
-            location.hash = newHash.replace(/^#/, '');
-          }
-          
-          // GA4: POI点击事件
-          if (typeof gtag !== 'undefined') {
-            gtag('event', 'select_poi', {
-              poi_id: poiId,
-              poi_name: displayName.replace('<br>', ' '),
-              poi_category: categoryInfo.label,
-              method: 'marker_click'
-            });
-          }
-        });
-        
         // 获取类别键名
-        const categoryKey = Object.keys(categoryColors).find(key => 
-          categoryColors[key].color === categoryInfo.color && 
+        const categoryKey = Object.keys(categoryColors).find(key =>
           categoryColors[key].label === categoryInfo.label
-        );
-        
-        // 存储标记点及其类别
-        markers.push({
-          marker: marker,
-          category: categoryKey || 'default'
+        ) || 'default';
+
+        poiFeatures.push({
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: [lon, lat] },
+          properties: {
+            index,
+            group: getPoiGroup(categoryKey),
+            tier: getPoiTier(props, categoryKey),
+            nameEn: (nameEn || '').trim(),
+            nameZh: (nameZh || '').trim()
+          }
         });
-        
+
         // 存储用于搜索的数据
         markerData.push({
-          marker: marker,
-          category: categoryKey || 'default',
+          index,
+          popup,
+          category: categoryKey,
           name: displayName.replace('<br>', ' '),
           nameEn: nameEn || '',
           nameZh: nameZh || '',
@@ -2578,6 +2795,18 @@
         });
       });
       
+      // 样式与图标就绪后添加 POI 图层
+      // 只需样式解析完成即可添加图层，无需等待瓦片（'load' 事件要等瓦片加载完）
+      const mapStyleReady = new Promise(resolve => {
+        if (map.style && map.style._loaded) return resolve();
+        map.once('style.load', resolve);
+        map.once('load', resolve);
+      });
+      mapStyleReady
+        .then(addPoiIcons)
+        .then(addPoiLayers)
+        .catch(err => console.error('POI 图层加载失败:', err));
+
       // 如果 URL 中有 POI 参数，自动打开对应的标记
       if (initialState.poiId) {
         // 转换为字符串进行比较（因为URL中是字符串）
@@ -2593,7 +2822,7 @@
             
             // 打开 popup
             setTimeout(() => {
-              targetPOI.marker.togglePopup();
+              openPoi(targetPOI.index);
             }, 1500);
           }, 1000);
         }
@@ -2807,7 +3036,7 @@
           
           // 打开弹窗
           setTimeout(() => {
-            data.marker.togglePopup();
+            openPoi(data.index);
           }, 1000);
           
           // 清空搜索
@@ -2830,29 +3059,12 @@
         }
       });
       
-      // 存储每个分组的选中状态
-      const groupStates = {};
-      Object.keys(categoryGroups).forEach(group => {
-        groupStates[group] = true; // 初始都是选中状态
-      });
       
       // 更新标记点可见性
       function updateMarkerVisibility() {
-        markers.forEach(item => {
-          const group = Object.keys(categoryGroups).find(g => 
-            categoryGroups[g].categories.includes(item.category)
-          );
-          const isVisible = group && groupStates[group];
-          const element = item.marker.getElement();
-          
-          if (isVisible) {
-            element.classList.remove('marker-hidden');
-          } else {
-            element.classList.add('marker-hidden');
-          }
-        });
+        refreshPoiFilters();
       }
-      
+
       // 点击分类项切换选中状态
       document.querySelectorAll('.category-item').forEach(item => {
         item.addEventListener('click', function() {
