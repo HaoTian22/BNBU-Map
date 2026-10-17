@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="description" content="BNBU Campus Map — Interactive map of Beijing Normal-Hong Kong Baptist University. Explore buildings, facilities and points of interest (POI) on campus. BNBU 校园地图，提供校园建筑、设施及兴趣点的搜索与导览。">
   <title>BNBU Map | BNBU 校园地图</title>
 
@@ -73,87 +73,91 @@
   <link rel="manifest" href="/manifest.json">
   <link rel="icon" href="/favicon.ico">
   <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#1f2125" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#1c1c1e" media="(prefers-color-scheme: dark)">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="BNBU Map">
   <link rel="apple-touch-icon" href="/icon.png">
   <link href="https://unpkg.com/maplibre-gl@3.6.0/dist/maplibre-gl.css" rel="stylesheet" crossorigin="anonymous" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet" crossorigin="anonymous" referrerpolicy="no-referrer" />
   <script src="https://unpkg.com/maplibre-gl@3.6.0/dist/maplibre-gl.js" crossorigin="anonymous"></script>
   <script src="https://unpkg.com/pinyin-pro@3.19.6/dist/index.js" crossorigin="anonymous"></script>
   <link rel="stylesheet" href="https://unpkg.com/@waline/client@v3/dist/waline.css" crossorigin="anonymous" />
   <style>
-    /* ===== 设计变量 ===== */
+    /* ===== 设计变量（参考 Apple Maps 的材质与配色） ===== */
     :root {
       color-scheme: light dark;
-      --font: system-ui, -apple-system, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
+      --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
 
-      --accent: #1a66cc;
-      --accent-hover: #1558b0;
-      --accent-active: #114a94;
-      --accent-soft: #e7effa;
+      --accent: #007aff;
+      --accent-hover: #0068d9;
+      --accent-active: #0058b8;
+      --accent-soft: rgba(0, 122, 255, 0.14);
       --on-accent: #ffffff;
 
       --surface: #ffffff;
-      --surface-2: #f4f5f7;
-      --surface-hover: rgba(20, 30, 50, 0.06);
-      --text: #1f2328;
-      --text-muted: #59616c;
-      --text-faint: #6b7280;
-      --border: #e3e5e8;
-      --border-strong: #cdd2d8;
+      --surface-2: #f2f2f7;
+      --surface-hover: rgba(116, 116, 128, 0.1);
+      --fill: rgba(118, 118, 128, 0.12);
+      --fill-strong: rgba(118, 118, 128, 0.2);
+      --text: #1d1d1f;
+      --text-muted: rgba(60, 60, 67, 0.62);
+      --text-faint: rgba(60, 60, 67, 0.5);
+      --border: rgba(60, 60, 67, 0.14);
+      --border-strong: rgba(60, 60, 67, 0.26);
 
-      --shadow: 0 1px 2px rgba(15, 20, 30, 0.06), 0 6px 20px rgba(15, 20, 30, 0.12);
-      --shadow-lg: 0 12px 36px rgba(15, 20, 30, 0.2);
+      --shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.06), 0 2px 6px rgba(0, 0, 0, 0.08), 0 8px 24px rgba(0, 0, 0, 0.1);
+      --shadow-lg: 0 0 0 0.5px rgba(0, 0, 0, 0.06), 0 10px 40px rgba(0, 0, 0, 0.18);
 
-      --glass: rgba(255, 255, 255, 0.72);
-      --glass-strong: rgba(255, 255, 255, 0.86);
-      --glass-border: rgba(255, 255, 255, 0.65);
-      --glass-blur: blur(18px) saturate(170%);
-      --spring: cubic-bezier(0.34, 1.4, 0.64, 1);
-      /* Liquid Glass 边缘：左上/右下高光 + 内部光泽 */
+      /* Liquid Glass：更通透的玻璃 + 高光描边 + 弹性动效 */
+      --material: rgba(255, 255, 255, 0.58);
+      --material-strong: rgba(255, 255, 255, 0.8);
+      --material-blur: blur(14px) saturate(190%) brightness(1.04);
       --edge-hi: rgba(255, 255, 255, 0.95);
-      --edge-lo: rgba(255, 255, 255, 0.18);
-      --glass-inset: inset 0 1px 1px rgba(255, 255, 255, 0.7),
-                     inset 0 -1px 2px rgba(255, 255, 255, 0.3),
-                     inset 0 0 18px rgba(255, 255, 255, 0.25);
+      --edge-lo: rgba(255, 255, 255, 0.2);
+      --glass-inset: inset 0 1px 1px rgba(255, 255, 255, 0.75),
+                     inset 0 -1px 1px rgba(255, 255, 255, 0.35),
+                     inset 0 0 20px rgba(255, 255, 255, 0.28);
+      --spring: cubic-bezier(0.34, 1.45, 0.64, 1);
 
-      --radius: 28px;
-      --radius-md: 18px;
+      --radius: 30px;
+      --radius-md: 22px;
       --radius-sm: 999px;
-      --gutter: 10px;
+      --gutter: 12px;
       --cookie-offset: 0px;
     }
 
     @media (prefers-color-scheme: dark) {
       :root {
-        --accent: #6aa5f2;
-        --accent-hover: #82b4f5;
-        --accent-active: #5895e6;
-        --accent-soft: #1f2b3c;
-        --on-accent: #0d1420;
+        --accent: #0a84ff;
+        --accent-hover: #339aff;
+        --accent-active: #0070e0;
+        --accent-soft: rgba(10, 132, 255, 0.22);
+        --on-accent: #ffffff;
 
-        --surface: #1f2125;
-        --surface-2: #17181b;
-        --surface-hover: rgba(255, 255, 255, 0.07);
-        --text: #e7e9ec;
-        --text-muted: #a8aeb7;
-        --text-faint: #9aa0a9;
-        --border: #33373d;
-        --border-strong: #464b53;
+        --surface: #1c1c1e;
+        --surface-2: #000000;
+        --surface-hover: rgba(255, 255, 255, 0.08);
+        --fill: rgba(118, 118, 128, 0.24);
+        --fill-strong: rgba(118, 118, 128, 0.36);
+        --text: #f5f5f7;
+        --text-muted: rgba(235, 235, 245, 0.62);
+        --text-faint: rgba(235, 235, 245, 0.45);
+        --border: rgba(84, 84, 88, 0.6);
+        --border-strong: rgba(120, 120, 128, 0.7);
 
-        --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 2px 8px rgba(0, 0, 0, 0.35);
-        --shadow-lg: 0 8px 28px rgba(0, 0, 0, 0.5);
+        --shadow: 0 0 0 0.5px rgba(255, 255, 255, 0.08), 0 2px 6px rgba(0, 0, 0, 0.35), 0 8px 24px rgba(0, 0, 0, 0.35);
+        --shadow-lg: 0 0 0 0.5px rgba(255, 255, 255, 0.08), 0 10px 40px rgba(0, 0, 0, 0.55);
 
-        --glass: rgba(32, 34, 39, 0.68);
-        --glass-strong: rgba(32, 34, 39, 0.86);
-        --glass-border: rgba(255, 255, 255, 0.09);
-        --edge-hi: rgba(255, 255, 255, 0.38);
-        --edge-lo: rgba(255, 255, 255, 0.05);
-        --glass-inset: inset 0 1px 1px rgba(255, 255, 255, 0.14),
-                       inset 0 -1px 2px rgba(255, 255, 255, 0.05),
-                       inset 0 0 18px rgba(255, 255, 255, 0.04);
+        --material: rgba(30, 30, 32, 0.55);
+        --material-strong: rgba(40, 40, 42, 0.8);
+        --material-blur: blur(14px) saturate(170%) brightness(0.92);
+        --edge-hi: rgba(255, 255, 255, 0.42);
+        --edge-lo: rgba(255, 255, 255, 0.06);
+        --glass-inset: inset 0 1px 1px rgba(255, 255, 255, 0.16),
+                       inset 0 -1px 1px rgba(255, 255, 255, 0.06),
+                       inset 0 0 20px rgba(255, 255, 255, 0.04);
       }
     }
 
@@ -177,33 +181,36 @@
       outline-offset: 2px;
     }
 
+    /* Font Awesome 图标：统一居中、按字号缩放 */
     .icon {
-      width: 16px;
-      height: 16px;
       flex: none;
-      fill: none;
-      stroke: currentColor;
-      stroke-width: 2;
-      stroke-linecap: round;
-      stroke-linejoin: round;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 1.25em;
+      font-size: 15px;
+      line-height: 1;
     }
 
-    /* ===== Liquid Glass 边框 =====
-       渐变描边：用 mask 只保留 1.5px 外环，光从左上与右下两角反射 */
-    .liquid { border-color: transparent !important; }
-    .icon-btn.liquid { position: relative; }
-    .liquid::before,
+    /* Liquid Glass 材质：通透玻璃 + 内部光泽 + 左上/右下反光描边 */
+    .material {
+      background: var(--material);
+      -webkit-backdrop-filter: var(--material-blur);
+      backdrop-filter: var(--material-blur);
+      box-shadow: var(--glass-inset), var(--shadow);
+    }
+    .material::before,
     .maplibregl-popup-content::before {
       content: '';
       position: absolute;
-      inset: -1px;
-      padding: 1.5px;
+      inset: 0;
+      padding: 1.25px;
       border-radius: inherit;
       background: linear-gradient(135deg,
         var(--edge-hi) 0%,
-        var(--edge-lo) 28%,
+        var(--edge-lo) 30%,
         transparent 50%,
-        var(--edge-lo) 72%,
+        var(--edge-lo) 70%,
         var(--edge-hi) 100%);
       -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
       -webkit-mask-composite: xor;
@@ -211,14 +218,17 @@
       pointer-events: none;
       z-index: 2;
     }
-    .liquid { box-shadow: var(--glass-inset), var(--shadow); }
-    .maplibregl-popup-content { box-shadow: var(--glass-inset), var(--shadow-lg) !important; }
-    .cookie-consent.liquid { box-shadow: var(--glass-inset), var(--shadow-lg); }
 
-    /* 卡片内的输入框与胶囊：较弱的内高光 */
-    .search-box,
+    /* 按压反馈：玻璃轻微“鼓起”并带回弹 */
     .btn,
-    .category-item { box-shadow: inset 0 1px 0 color-mix(in srgb, var(--edge-hi) 55%, transparent); }
+    .icon-btn,
+    .category-swatch {
+      transition-property: background-color, color, transform, box-shadow, opacity;
+      transition-duration: 0.15s, 0.15s, 0.4s, 0.2s, 0.15s;
+      transition-timing-function: ease, ease, var(--spring), ease, ease;
+    }
+    .btn:active,
+    .icon-btn:active { transform: scale(1.08); }
 
     /* 中英双语：中文作为次要文字 */
     .zh {
@@ -238,41 +248,35 @@
       font-size: 13px;
       font-weight: 600;
       border-radius: var(--radius-sm);
-      border: 1px solid var(--glass-border);
-      background: var(--glass-strong);
-      color: var(--text);
+      border: none;
+      background: var(--fill);
+      box-shadow: inset 0 1px 0 color-mix(in srgb, var(--edge-hi) 50%, transparent);
+      color: var(--accent);
       cursor: pointer;
       white-space: nowrap;
-      transition: background-color 0.15s, border-color 0.15s, color 0.15s;
     }
-    .btn:hover { background: var(--glass); border-color: var(--border-strong); }
+    .btn .zh { color: inherit; opacity: 0.75; }
+    .btn:hover { background: var(--fill-strong); }
     .btn-primary {
       background: var(--accent);
-      border-color: var(--accent);
       color: var(--on-accent);
     }
-    .btn-primary .zh { color: inherit; opacity: 0.8; }
-    .btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+    .btn-primary:hover { background: var(--accent-hover); }
     .btn-primary:active { background: var(--accent-active); }
 
-    /* ===== 主面板：搜索 + 定位 + 分类 ===== */
+    /* ===== 侧边面板：搜索 + 分类 ===== */
     .app-card {
       position: absolute;
       top: var(--gutter);
       left: var(--gutter);
       z-index: 1000;
-      width: 360px;
+      width: 350px;
       max-height: calc(100vh - 2 * var(--gutter));
       box-sizing: border-box;
       display: flex;
       flex-direction: column;
-      padding: 8px;
-      background: var(--glass);
-      -webkit-backdrop-filter: var(--glass-blur);
-      backdrop-filter: var(--glass-blur);
-      border: 1px solid var(--glass-border);
+      padding: 10px;
       border-radius: var(--radius);
-      box-shadow: var(--glass-inset), var(--shadow);
     }
 
     .search-row {
@@ -290,90 +294,92 @@
     .search-icon {
       position: absolute;
       z-index: 1;
-      left: 16px;
-      top: 14px;
-      color: var(--text-faint);
+      left: 13px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 15px;
+      color: var(--text-muted);
       pointer-events: none;
     }
 
     .search-box {
       width: 100%;
-      height: 44px;
+      height: 42px;
       box-sizing: border-box;
-      padding: 0 18px 0 42px;
-      font: 15px var(--font);
+      padding: 0 16px 0 40px;
+      font: 16px var(--font);
       color: var(--text);
-      background: var(--glass-strong);
-      border: 1px solid var(--glass-border);
+      background: var(--fill);
+      border: none;
       border-radius: var(--radius-sm);
+      box-shadow: inset 0 1px 0 color-mix(in srgb, var(--edge-hi) 45%, transparent);
       outline: none;
       -webkit-appearance: none;
       appearance: none;
-      transition: border-color 0.15s, box-shadow 0.15s;
+      transition: box-shadow 0.15s;
     }
-    .search-box::placeholder { color: var(--text-faint); }
-    .search-box:focus {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px var(--accent-soft);
+    .search-box::placeholder { color: var(--text-muted); }
+    .search-box:focus { box-shadow: 0 0 0 3px var(--accent-soft); background: var(--material-strong); }
+    .search-box::-webkit-search-cancel-button { cursor: pointer; }
+
+    /* ===== 地图控件：Apple Maps 式分组按钮 ===== */
+    .map-controls {
+      position: absolute;
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .map-controls-top { top: var(--gutter); right: var(--gutter); }
+    .map-controls-bottom { bottom: 36px; right: var(--gutter); }
+
+    .control-group {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      padding: 3px;
+      border-radius: var(--radius-sm);
     }
 
     .icon-btn {
-      width: 44px;
-      height: 44px;
+      width: 42px;
+      height: 42px;
       flex: none;
       display: inline-flex;
       align-items: center;
       justify-content: center;
       padding: 0;
       color: var(--text);
-      background: var(--glass-strong);
-      border: 1px solid var(--glass-border);
+      background: none;
+      border: none;
       border-radius: 50%;
       cursor: pointer;
-      transition: background-color 0.15s, color 0.15s, border-color 0.15s;
     }
-    .icon-btn:hover { border-color: var(--border-strong); }
-    .icon-btn .icon { width: 18px; height: 18px; }
+    .icon-btn:hover { background: var(--surface-hover); color: var(--text); }
+    .icon-btn:active { background: var(--fill-strong); }
+    .icon-btn .icon { font-size: 18px; }
+    .control-group .icon-btn + .icon-btn { margin-top: 2px; }
 
     .locate-button.active,
-    .locate-button.locating {
-      background: var(--accent);
-      border-color: var(--accent);
-      color: var(--on-accent);
-    }
-    .locate-button.active:hover { background: var(--accent-hover); }
+    .locate-button.locating { color: var(--accent); }
     .locate-button.locating { animation: pulse 1.5s infinite; }
 
-    /* 地图控件（右上角） */
-    .map-controls {
-      position: absolute;
-      top: var(--gutter);
-      right: var(--gutter);
-      z-index: 1000;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    .map-controls .icon-btn {
-      width: 50px;
-      height: 50px;
-      background: var(--glass);
-      -webkit-backdrop-filter: var(--glass-blur);
-      backdrop-filter: var(--glass-blur);
-      box-shadow: var(--glass-inset), var(--shadow);
-    }
+    /* 指南针：地图旋转/倾斜后才显示，点击回正 */
+    .compass-button { display: none; }
+    .compass-button.show { display: inline-flex; }
+    .compass-button { color: #ff3b30; }
+    .compass-needle { transition: transform 0.1s linear; }
 
     /* 底部面板把手（仅移动端） */
     .sheet-handle { display: none; }
 
-    /* 搜索结果：在卡片内展开，搜索时替代分类区域 */
+    /* 搜索结果：在面板内展开，搜索时替代分类区域 */
     .search-results {
       height: 0;
-      max-height: 300px;
+      max-height: 320px;
       overflow: hidden;
       opacity: 0;
-      scrollbar-width: thin;
-      border-radius: var(--radius-md);
+      scrollbar-width: none;
       transition: height 0.2s ease, opacity 0.15s ease;
     }
     .search-results.show {
@@ -381,13 +387,17 @@
       overflow-y: auto;
       overscroll-behavior: contain;
       -webkit-overflow-scrolling: touch;
-      margin-top: 6px;
-      -webkit-mask-image: linear-gradient(transparent, #000 8px, #000 calc(100% - 8px), transparent);
-      mask-image: linear-gradient(transparent, #000 8px, #000 calc(100% - 8px), transparent);
+      margin: 8px 0 0;
+      -webkit-mask-image: linear-gradient(transparent, #000 10px, #000 calc(100% - 10px), transparent);
+      mask-image: linear-gradient(transparent, #000 10px, #000 calc(100% - 10px), transparent);
     }
     .app-card:has(.search-results.show) .layer-control { display: none; }
+    /* 隐藏滚动条 */
+    .search-results::-webkit-scrollbar,
+    #category-list::-webkit-scrollbar { display: none; }
 
     .search-result-item {
+      position: relative;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -398,13 +408,27 @@
       border-radius: var(--radius-md);
     }
     .search-result-item:hover { background: var(--surface-hover); }
+    .search-result-item:hover::before,
+    .search-result-item:hover + .search-result-item::before { opacity: 0; }
+    /* 列表分隔线（从文字处开始，Apple 列表风格） */
+    .search-result-item + .search-result-item::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 14px;
+      right: 14px;
+      border-top: 0.5px solid var(--border);
+    }
 
     .search-result-info { flex: 1; min-width: 0; }
 
     .search-result-name {
-      font-weight: 600;
+      font-weight: 500;
       color: var(--text);
-      margin-bottom: 2px;
+      margin-bottom: 1px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .search-result-category {
@@ -419,7 +443,7 @@
       font-variant-numeric: tabular-nums;
     }
 
-    /* 分类筛选 */
+    /* 分类筛选：圆形图标网格（类似 Apple Maps 的“查找附近”） */
     .layer-control {
       min-height: 0;
       display: flex;
@@ -428,28 +452,71 @@
 
     .category-header {
       display: flex;
-      align-items: center;
+      align-items: baseline;
       justify-content: space-between;
-      margin: 10px 0 2px;
-      padding: 0 4px 0 12px;
+      margin: 14px 0 4px;
+      padding: 0 6px;
     }
 
     .category-header h3 {
       margin: 0;
-      font-size: 12px;
-      font-weight: 600;
-      color: var(--text-muted);
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text);
       white-space: nowrap;
     }
+    .category-header h3 .zh { font-weight: 500; }
 
-    .filter-buttons { display: flex; gap: 2px; }
+    .filter-buttons {
+      display: flex;
+      gap: 2px;
+      margin-right: -4px;
+      transition: opacity 0.2s ease, visibility 0.2s;
+    }
+
+    /* 分类折叠按钮（桌面端与移动端通用） */
+    .category-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      margin: 0 0 0 -6px;
+      padding: 4px 6px;
+      font: inherit;
+      color: inherit;
+      background: none;
+      border: none;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+    }
+    .category-toggle:hover { background: var(--surface-hover); }
+    .category-toggle .chevron {
+      font-size: 11px;
+      color: var(--text-muted);
+      transition: transform 0.35s var(--spring);
+    }
+    .categories-collapsed .category-toggle .chevron { transform: rotate(-90deg); }
+    .categories-collapsed .filter-buttons { opacity: 0; visibility: hidden; }
+
+    .category-body {
+      display: grid;
+      grid-template-rows: 1fr;
+      min-height: 0;
+      transition: grid-template-rows 0.38s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.25s ease;
+    }
+    .categories-collapsed .category-body { grid-template-rows: 0fr; opacity: 0; }
+    .category-body-inner {
+      min-height: 0;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
 
     .filter-btn {
       white-space: nowrap;
-      min-height: 30px;
-      padding: 0 10px;
-      font-size: 12px;
-      font-weight: 600;
+      min-height: 28px;
+      padding: 0 6px;
+      font-size: 13px;
+      font-weight: 400;
       color: var(--accent);
       background: none;
       border: none;
@@ -457,59 +524,77 @@
       cursor: pointer;
     }
     .filter-btn:hover { background: var(--accent-soft); }
+    .filter-btn:active { opacity: 0.6; }
 
     #category-list {
       overscroll-behavior: contain;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      padding: 6px 4px 4px;
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 10px 4px;
+      padding: 8px 0 4px;
       overflow-y: auto;
       scrollbar-width: none;
     }
 
     .category-item {
-      display: inline-flex;
+      display: flex;
+      flex-direction: column;
       align-items: center;
-      gap: 7px;
-      flex: none;
-      height: 34px;
-      padding: 0 13px 0 11px;
-      font-size: 13px;
-      white-space: nowrap;
+      gap: 5px;
+      min-width: 0;
+      padding: 2px 0;
+      font-size: 11px;
+      line-height: 1.25;
       color: var(--text);
-      background: color-mix(in srgb, var(--swatch) 14%, transparent);
-      border: 1px solid color-mix(in srgb, var(--swatch) 38%, transparent);
+      background: none;
+      border: none;
       border-radius: var(--radius-sm);
       cursor: pointer;
-      transition: background-color 0.15s, border-color 0.15s, color 0.15s;
+      -webkit-tap-highlight-color: transparent;
     }
-    .category-item:hover { background: color-mix(in srgb, var(--swatch) 22%, transparent); }
 
     .category-swatch {
-      width: 9px;
-      height: 9px;
+      width: 44px;
+      height: 44px;
       flex: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       border-radius: 50%;
+      color: #fff;
       background: var(--swatch);
-      box-shadow: inset 0 0 0 1.5px var(--swatch);
+      box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.45), inset 0 -2px 4px rgba(0, 0, 0, 0.12), 0 2px 6px color-mix(in srgb, var(--swatch) 35%, transparent);
+    }
+    .category-swatch .icon { font-size: 19px; }
+    .category-item:hover .category-swatch { filter: brightness(1.06); }
+    .category-item:active .category-swatch { transform: scale(1.1); }
+
+    .category-label {
+      max-width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+    .category-label .zh {
+      margin: 0;
+      font-size: 10px;
     }
 
-    .category-item:not(.selected) {
+    .category-item:not(.selected) { color: var(--text-muted); }
+    .category-item:not(.selected) .category-swatch {
+      background: var(--fill);
       color: var(--text-faint);
-      background: transparent;
-      border-color: var(--border);
+      box-shadow: inset 0 1px 0 color-mix(in srgb, var(--edge-hi) 50%, transparent);
     }
-    .category-item:not(.selected):hover { background: var(--surface-hover); }
-    .category-item:not(.selected) .category-swatch { background: transparent; }
 
     .panel-footer {
-      margin: 8px 6px 0;
-      padding: 8px 0 2px;
-      border-top: 1px solid var(--border);
+      margin: 10px 6px 0;
+      padding: 10px 0 2px;
+      border-top: 0.5px solid var(--border);
       font-size: 12px;
       line-height: 1.6;
-      color: var(--text-faint);
+      color: var(--text-muted);
       text-align: center;
     }
     .osm-attribution {
@@ -543,82 +628,107 @@
       flex-direction: column;
     }
 
+    /* MapLibre 自带版权信息：与面板材质一致 */
+    .maplibregl-ctrl-attrib {
+      background: var(--material) !important;
+      -webkit-backdrop-filter: var(--material-blur);
+      backdrop-filter: var(--material-blur);
+      color: var(--text-muted);
+    }
+    .maplibregl-ctrl-attrib a { color: var(--text-muted) !important; }
+
     /* ===== 用户位置标记（带方向箭头） ===== */
     .user-marker {
-      width: 12px;
-      height: 12px;
-      background-color: #1a73e8;
+      width: 14px;
+      height: 14px;
+      background-color: #007aff;
       border-radius: 50%;
-      border: 2px solid white;
-      box-shadow: 0 0 0 4px rgba(26, 115, 232, 0.2), 0 1px 3px rgba(0, 0, 0, 0.3);
+      border: 3px solid white;
+      box-shadow: 0 0 0 6px rgba(0, 122, 255, 0.18), 0 1px 4px rgba(0, 0, 0, 0.35);
       position: relative;
     }
     .user-marker::after {
       content: '';
       position: absolute;
-      top: -8px;
+      top: -11px;
       left: 50%;
       transform: translateX(-50%);
-      width: 8px;
-      height: 6px;
-      background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 18"><path d="M2,18 L10.6,2.4 C11.3,1.1 12.7,1.1 13.4,2.4 L22,18 Z" fill="%231a73e8"/></svg>') no-repeat center;
+      width: 10px;
+      height: 7px;
+      background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 18"><path d="M2,18 L10.6,2.4 C11.3,1.1 12.7,1.1 13.4,2.4 L22,18 Z" fill="%23007aff"/></svg>') no-repeat center;
       background-size: contain;
     }
     .user-marker.no-compass::after { display: none; }
 
-    /* ===== POI 弹窗 ===== */
+    /* ===== POI 弹窗（地点卡片） ===== */
     .maplibregl-popup-content {
       padding: 16px 18px;
       font-family: var(--font);
       color: var(--text);
-      background: var(--glass-strong);
-      -webkit-backdrop-filter: var(--glass-blur);
-      backdrop-filter: var(--glass-blur);
+      background: var(--material-strong);
+      -webkit-backdrop-filter: var(--material-blur);
+      backdrop-filter: var(--material-blur);
       border-radius: var(--radius);
-      box-shadow: var(--shadow-lg);
+      box-shadow: var(--glass-inset), var(--shadow-lg);
       animation: popupFadeIn 0.15s ease-out;
     }
 
     .maplibregl-popup-anchor-bottom .maplibregl-popup-tip,
     .maplibregl-popup-anchor-bottom-left .maplibregl-popup-tip,
-    .maplibregl-popup-anchor-bottom-right .maplibregl-popup-tip { border-top-color: var(--glass-strong); }
+    .maplibregl-popup-anchor-bottom-right .maplibregl-popup-tip { border-top-color: var(--material-strong); }
     .maplibregl-popup-anchor-top .maplibregl-popup-tip,
     .maplibregl-popup-anchor-top-left .maplibregl-popup-tip,
-    .maplibregl-popup-anchor-top-right .maplibregl-popup-tip { border-bottom-color: var(--glass-strong); }
-    .maplibregl-popup-anchor-left .maplibregl-popup-tip { border-right-color: var(--glass-strong); }
-    .maplibregl-popup-anchor-right .maplibregl-popup-tip { border-left-color: var(--glass-strong); }
+    .maplibregl-popup-anchor-top-right .maplibregl-popup-tip { border-bottom-color: var(--material-strong); }
+    .maplibregl-popup-anchor-left .maplibregl-popup-tip { border-right-color: var(--material-strong); }
+    .maplibregl-popup-anchor-right .maplibregl-popup-tip { border-left-color: var(--material-strong); }
     .maplibregl-popup-tip { animation: popupFadeIn 0.15s ease-out; }
 
+    /* 关闭按钮：灰色圆形（Apple 卡片风格） */
     .maplibregl-popup-close-button {
-      top: 10px;
-      right: 10px;
-      width: 28px;
-      height: 28px;
-      font-size: 18px;
+      top: 12px;
+      right: 12px;
+      z-index: 3;
+      width: 30px;
+      height: 30px;
+      font-size: 17px;
       line-height: 1;
       color: var(--text-muted);
-      border-radius: var(--radius-sm);
+      background: var(--fill);
+      border-radius: 50%;
     }
-    .maplibregl-popup-close-button:hover { background: var(--surface-hover); }
+    .maplibregl-popup-close-button:hover { background: var(--fill-strong); }
+    /* MapLibre 自带的 × 文本替换为 Font Awesome xmark */
+    .maplibregl-popup-close-button {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0;
+    }
+    .maplibregl-popup-close-button::after {
+      content: "\f00d";
+      font: var(--fa-font-solid);
+      font-size: 13px;
+    }
 
     .popup-title {
       margin: 0 0 2px;
-      padding-right: 22px;
-      font-size: 15px;
-      line-height: 1.35;
-      font-weight: 600;
+      padding-right: 30px;
+      font-size: 17px;
+      line-height: 1.3;
+      font-weight: 700;
       color: var(--text);
     }
     .popup-title-zh {
       display: block;
+      font-size: 14px;
       font-weight: 400;
       color: var(--text-muted);
     }
 
     .popup-category {
       margin: 4px 0 8px;
-      font-size: 12px;
-      font-weight: 600;
+      font-size: 13px;
+      font-weight: 500;
       color: var(--cat);
     }
 
@@ -638,16 +748,35 @@
     .popup-actions {
       display: flex;
       gap: 8px;
-      margin-top: 10px;
-      padding-top: 10px;
-      border-top: 1px solid var(--border);
+      margin-top: 12px;
     }
-    .popup-actions .btn {
-      flex: 1;
-      height: 36px;
-      padding: 0 10px;
-      font-size: 12px;
+    /* 仅图标的圆形按钮（分享/评论） */
+    .popup-actions .icon-only {
+      position: relative;
+      width: 40px;
+      height: 40px;
+      padding: 0;
+      border-radius: 50%;
     }
+    .popup-actions .icon-only .icon { font-size: 16px; }
+    .count-badge {
+      position: absolute;
+      top: -4px;
+      right: -6px;
+      min-width: 18px;
+      height: 18px;
+      box-sizing: border-box;
+      padding: 0 5px;
+      font-size: 11px;
+      font-weight: 600;
+      line-height: 18px;
+      text-align: center;
+      color: var(--on-accent);
+      background: var(--accent);
+      border-radius: 9px;
+      font-variant-numeric: tabular-nums;
+    }
+    .count-badge:empty { display: none; }
 
     @keyframes popupFadeIn {
       from { opacity: 0; }
@@ -677,16 +806,16 @@
 
     @keyframes pulse {
       0%, 100% { opacity: 1; }
-      50% { opacity: 0.6; }
+      50% { opacity: 0.5; }
     }
 
     /* ===== 加载界面 ===== */
     .loading-overlay {
       position: fixed;
       inset: 0;
-      background: var(--glass);
-      -webkit-backdrop-filter: var(--glass-blur);
-      backdrop-filter: var(--glass-blur);
+      background: var(--material);
+      -webkit-backdrop-filter: var(--material-blur);
+      backdrop-filter: var(--material-blur);
       display: flex;
       justify-content: center;
       align-items: center;
@@ -715,9 +844,9 @@
     }
 
     .loading-progress-bar {
-      width: 220px;
-      height: 3px;
-      background: var(--border);
+      width: 200px;
+      height: 4px;
+      background: var(--fill);
       border-radius: 2px;
       overflow: hidden;
       margin: 16px auto 0;
@@ -726,6 +855,7 @@
     .loading-progress-fill {
       height: 100%;
       background: var(--accent);
+      border-radius: 2px;
       width: 0%;
       transition: width 0.3s ease;
     }
@@ -733,19 +863,15 @@
     /* ===== 统计同意提示 ===== */
     .cookie-consent {
       position: fixed;
-      left: var(--gutter);
-      bottom: var(--gutter);
+      right: var(--gutter);
+      bottom: 36px;
       z-index: 10001;
-      width: 400px;
+      width: 360px;
       max-width: calc(100vw - 2 * var(--gutter));
       box-sizing: border-box;
-      padding: 20px;
-      background: var(--glass);
-      -webkit-backdrop-filter: var(--glass-blur);
-      backdrop-filter: var(--glass-blur);
-      border: 1px solid var(--glass-border);
+      padding: 18px;
       border-radius: var(--radius);
-      box-shadow: var(--shadow-lg);
+      box-shadow: var(--glass-inset), var(--shadow-lg);
       display: none;
       animation: slideUp 0.25s ease-out;
     }
@@ -765,7 +891,7 @@
 
     .cookie-consent-text h3 {
       margin: 0 0 6px;
-      font-size: 14px;
+      font-size: 15px;
       font-weight: 600;
       color: var(--text);
     }
@@ -794,7 +920,7 @@
     .comment-modal-overlay {
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, 0.35);
+      background: rgba(0, 0, 0, 0.3);
       -webkit-backdrop-filter: blur(6px);
       backdrop-filter: blur(6px);
       z-index: 20000;
@@ -830,12 +956,12 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 14px 14px 14px 24px;
-      border-bottom: 1px solid var(--border);
+      padding: 12px 12px 12px 20px;
+      border-bottom: 0.5px solid var(--border);
       flex-shrink: 0;
     }
     .comment-modal-title {
-      font-size: 15px;
+      font-size: 17px;
       font-weight: 600;
       flex: 1;
       margin-right: 12px;
@@ -844,21 +970,21 @@
       white-space: nowrap;
     }
     .comment-modal-close {
-      width: 36px;
-      height: 36px;
+      width: 30px;
+      height: 30px;
       padding: 0;
       display: flex;
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
       color: var(--text-muted);
-      background: none;
+      background: var(--fill);
       border: none;
-      border-radius: var(--radius-sm);
+      border-radius: 50%;
       cursor: pointer;
     }
     .comment-modal-close:hover {
-      background: var(--surface-hover);
+      background: var(--fill-strong);
       color: var(--text);
     }
     .comment-modal-body {
@@ -877,55 +1003,37 @@
       --waline-active-color: var(--accent-hover);
     }
 
-    /* 按压反馈：像 Liquid Glass 一样轻微"鼓起" */
-    .icon-btn,
-    .btn,
-    .category-item,
-    .filter-btn {
-      transition-property: background-color, border-color, color, transform, box-shadow;
-      transition-duration: 0.15s, 0.15s, 0.15s, 0.35s, 0.2s;
-      transition-timing-function: ease, ease, ease, var(--spring), ease;
-    }
-    .icon-btn:active,
-    .btn:active,
-    .category-item:active { transform: scale(1.07); }
-    .filter-btn:active { transform: scale(0.96); }
-
-    /* ===== 移动端适配：面板停靠在底部 ===== */
+    /* ===== 移动端：贴底的底部面板（Apple Maps iOS 风格） ===== */
     @media (max-width: 768px) {
       .app-card {
         top: auto;
-        bottom: calc(var(--gutter) + var(--cookie-offset));
+        bottom: max(var(--gutter), env(safe-area-inset-bottom));
         left: var(--gutter);
         right: var(--gutter);
         width: auto;
-        max-height: 70vh;
-        border-radius: 36px;
-        padding-left: 10px;
-        padding-right: 10px;
-        transition: bottom 0.35s var(--spring);
+        max-height: 72vh;
+        padding: 0 10px 10px;
+        border-radius: 34px;
       }
-      .search-box { height: 48px; }
-      .search-icon { top: 16px; }
-
-      .app-card { padding-top: 0; }
 
       .sheet-handle {
         display: block;
         width: 100%;
-        height: 20px;
+        height: 18px;
         padding: 0;
         background: none;
         border: none;
+        height: 24px;
         cursor: grab;
         touch-action: none;
       }
+      .sheet-handle:active { cursor: grabbing; }
       .sheet-handle::before {
         content: '';
         display: block;
         width: 36px;
         height: 5px;
-        margin: 0 auto;
+        margin: 8px auto 0;
         border-radius: 3px;
         background: var(--border-strong);
       }
@@ -934,39 +1042,54 @@
         grid-template-rows: 0fr;
         opacity: 0;
       }
-      .sheet-body { transition: grid-template-rows 0.45s cubic-bezier(0.3, 1.15, 0.4, 1), opacity 0.25s ease; }
-      .sheet-handle:active::before { transform: scaleX(1.25); }
-      .sheet-handle::before { transition: transform 0.3s var(--spring); }
+      .sheet-body { transition: grid-template-rows 0.4s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.25s ease; }
+      /* 内容保持自然高度，拖动时从上往下逐步露出，而不是被压缩 */
+      .sheet-body-inner,
+      .layer-control { display: block; }
+      #category-list { overflow: visible; }
+
+      /* 移动端由底部面板负责收起，分类标题不再可折叠 */
+      .category-toggle { pointer-events: none; }
+      .category-toggle .chevron { display: none; }
+      .categories-collapsed .category-body { grid-template-rows: 1fr; opacity: 1; }
+      .categories-collapsed .filter-buttons { opacity: 1; visibility: visible; }
 
       /* 搜索结果向上展开（位于把手下方、搜索框上方） */
       .sheet-handle { order: -2; flex: none; }
       .search-results { order: -1; }
-      .search-results.show { margin: 0 0 6px; }
+      .search-results.show { margin: 0 0 8px; }
 
-      .search-box { font-size: 16px; } /* 防止 iOS 聚焦时自动缩放 */
+      .search-box { height: 46px; } /* 字号 16px 防止 iOS 聚焦时自动缩放 */
 
-      .category-header { margin-top: 8px; }
-      .filter-btn { min-height: 36px; }
+      .category-header { margin-top: 14px; }
+      .filter-btn { min-height: 34px; }
 
-      #category-list { gap: 6px 5px; padding: 4px 2px; }
-      .category-item {
-        height: 34px;
-        padding: 0 11px 0 10px;
-        gap: 6px;
-        font-size: 13px;
-      }
+      #category-list { gap: 12px 2px; }
 
       .osm-attribution { display: block; }
-      .panel-footer { margin-top: 6px; padding-top: 6px; }
+      .maplibregl-ctrl-bottom-right { display: none; }
+
+      .map-controls-top {
+        top: calc(var(--gutter) + env(safe-area-inset-top));
+      }
+      .map-controls-bottom { display: none; }
+      .icon-btn { width: 44px; height: 44px; }
 
       .btn { height: 44px; font-size: 14px; }
 
-      .cookie-consent { right: var(--gutter); width: auto; }
+      /* 移动端提示框放在顶部，避免与底部面板重叠 */
+      .cookie-consent {
+        top: calc(var(--gutter) + env(safe-area-inset-top));
+        bottom: auto;
+        left: var(--gutter);
+        right: var(--gutter);
+        width: auto;
+      }
 
       .comment-modal {
         width: 100%;
         height: calc(100% - 24px);
-        border-radius: var(--radius) var(--radius) 0 0;
+        border-radius: 34px 34px 0 0;
       }
     }
   </style>
@@ -1033,7 +1156,7 @@
   </noscript>
 
 <!-- 统计同意提示 -->
-<div class="cookie-consent liquid" id="cookie-consent" role="region" aria-label="Analytics consent">
+<div class="cookie-consent material" id="cookie-consent" role="region" aria-label="Analytics consent">
   <div class="cookie-consent-text">
     <h3>We use Google Analytics <span class="zh">我们使用 Google Analytics</span></h3>
     <p>
@@ -1065,11 +1188,11 @@
 <div id="map"></div>
 
 <!-- 主面板：搜索 + 定位 + 分类筛选 -->
-<div class="app-card liquid search-container sheet-collapsed">
+<div class="app-card material search-container sheet-collapsed">
   <button class="sheet-handle" id="sheet-handle" aria-expanded="false" aria-label="Show categories / 显示分类"></button>
   <div class="search-row">
     <div class="search-field">
-      <svg class="icon search-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <i class="icon fa-solid fa-magnifying-glass search-icon" aria-hidden="true"></i>
       <input type="search" class="search-box" id="search-input" placeholder="Search places / 搜索地点" aria-label="Search places / 搜索地点" autocomplete="off">
     </div>
   </div>
@@ -1080,14 +1203,23 @@
     <div class="sheet-body-inner">
       <div class="layer-control">
         <div class="category-header">
-          <h3>Categories <span class="zh">类别</span></h3>
+          <h3>
+            <button class="category-toggle" id="category-toggle" aria-expanded="true" aria-controls="category-list">
+              Categories <span class="zh">类别</span>
+              <i class="icon fa-solid fa-chevron-down chevron" aria-hidden="true"></i>
+            </button>
+          </h3>
           <div class="filter-buttons">
             <button class="filter-btn" id="select-all">All / 全选</button>
             <button class="filter-btn" id="unselect-all">None / 全不选</button>
           </div>
         </div>
-        <div id="category-list">
-          <!-- 分类项将通过JavaScript动态生成 -->
+        <div class="category-body">
+          <div class="category-body-inner">
+            <div id="category-list">
+              <!-- 分类项将通过JavaScript动态生成 -->
+            </div>
+          </div>
         </div>
       </div>
 
@@ -1103,11 +1235,26 @@
   <div class="osm-attribution">© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>, ODbL</div>
 </div>
 
-<!-- 地图控件 -->
-<div class="map-controls">
-  <button class="icon-btn liquid locate-button" id="locate-button" aria-label="Show my location / 显示我的位置" title="Show my location / 显示我的位置">
-    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12h3M19 12h3M12 2v3M12 19v3"/><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.5"/></svg>
-  </button>
+<!-- 地图控件：右上角定位/指南针，右下角缩放 -->
+<div class="map-controls map-controls-top">
+  <div class="control-group material">
+    <button class="icon-btn locate-button" id="locate-button" aria-label="Show my location / 显示我的位置" title="Show my location / 显示我的位置">
+      <i class="icon fa-solid fa-location-arrow" aria-hidden="true"></i>
+    </button>
+    <button class="icon-btn compass-button" id="compass-button" aria-label="Reset north / 指北" title="Reset north / 指北">
+      <i class="icon fa-solid fa-compass compass-needle" id="compass-needle" aria-hidden="true"></i>
+    </button>
+  </div>
+</div>
+<div class="map-controls map-controls-bottom">
+  <div class="control-group material">
+    <button class="icon-btn" id="zoom-in" aria-label="Zoom in / 放大" title="Zoom in / 放大">
+      <i class="icon fa-solid fa-plus" aria-hidden="true"></i>
+    </button>
+    <button class="icon-btn" id="zoom-out" aria-label="Zoom out / 缩小" title="Zoom out / 缩小">
+      <i class="icon fa-solid fa-minus" aria-hidden="true"></i>
+    </button>
+  </div>
 </div>
 
 <!-- 评论弹窗 -->
@@ -1116,7 +1263,7 @@
     <div class="comment-modal-header">
       <div class="comment-modal-title" id="comment-modal-title"></div>
       <button class="comment-modal-close" onclick="closeCommentModal()" aria-label="Close / 关闭">
-        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        <i class="icon fa-solid fa-xmark" aria-hidden="true"></i>
       </button>
     </div>
     <div class="comment-modal-body">
@@ -1130,11 +1277,11 @@
   let analyticsConsent = false;
   let gaScriptLoaded = false;
 
-  // 线性图标（与 CSS .icon 配合）
-  const svgIcon = d => `<svg class="icon" viewBox="0 0 24 24" aria-hidden="true">${d}</svg>`;
+  // Font Awesome 图标（与 CSS .icon 配合）
+  const faIcon = name => `<i class="icon fa-solid fa-${name}" aria-hidden="true"></i>`;
   const ICONS = {
-    link: svgIcon('<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>'),
-    comment: svgIcon('<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>')
+    share: faIcon('arrow-up-from-bracket'),
+    comment: faIcon('comment')
   };
 
   // ======== Waline 评论集成 ========
@@ -1283,19 +1430,74 @@
     appCard.classList.toggle('sheet-collapsed', !expanded);
     sheetHandle.setAttribute('aria-expanded', String(expanded));
   }
+  let suppressHandleClick = false;
   sheetHandle.addEventListener('click', () => {
+    if (suppressHandleClick) { suppressHandleClick = false; return; }
     setSheetExpanded(appCard.classList.contains('sheet-collapsed'));
   });
-  let sheetTouchY = null;
-  sheetHandle.addEventListener('touchstart', e => { sheetTouchY = e.touches[0].clientY; }, { passive: true });
-  sheetHandle.addEventListener('touchend', e => {
-    if (sheetTouchY === null) return;
-    const dy = e.changedTouches[0].clientY - sheetTouchY;
-    sheetTouchY = null;
-    if (Math.abs(dy) > 20) {
-      e.preventDefault(); // 避免随后的 click 再次切换
-      setSheetExpanded(dy < 0);
-    }
+
+  // 拖动把手：展开区域高度实时跟随手指，松手后按速度/位置吸附到展开或收起
+  const sheetBody = appCard.querySelector('.sheet-body');
+  let sheetDrag = null;
+  let sheetSnapTimer = null;
+  function clearSheetInlineStyle() {
+    sheetBody.style.transition = '';
+    sheetBody.style.gridTemplateRows = '';
+    sheetBody.style.opacity = '';
+  }
+  sheetHandle.addEventListener('pointerdown', e => {
+    const full = sheetBody.firstElementChild.scrollHeight;
+    const start = appCard.classList.contains('sheet-collapsed') ? 0 : full;
+    sheetDrag = { y: e.clientY, full, start, h: start, t: e.timeStamp, v: 0, moved: false };
+    sheetHandle.setPointerCapture(e.pointerId);
+  });
+  sheetHandle.addEventListener('pointermove', e => {
+    if (!sheetDrag) return;
+    const dy = e.clientY - sheetDrag.y;
+    if (!sheetDrag.moved && Math.abs(dy) < 4) return;
+    sheetDrag.moved = true;
+    // 超出范围时加阻尼，手感更接近 iOS
+    let h = sheetDrag.start - dy;
+    if (h < 0) h = h / 4;
+    else if (h > sheetDrag.full) h = sheetDrag.full + (h - sheetDrag.full) / 4;
+    const dt = Math.max(e.timeStamp - sheetDrag.t, 1);
+    sheetDrag.v = (h - sheetDrag.h) / dt;
+    sheetDrag.h = h;
+    sheetDrag.t = e.timeStamp;
+    sheetBody.style.transition = 'none';
+    sheetBody.style.gridTemplateRows = Math.max(h, 0) + 'px';
+    sheetBody.style.opacity = Math.min(Math.max(h / sheetDrag.full, 0), 1) * 1.5;
+  });
+  function endSheetDrag() {
+    if (!sheetDrag) return;
+    const { moved, v, h, full } = sheetDrag;
+    sheetDrag = null;
+    if (!moved) return;
+    suppressHandleClick = true;
+    setTimeout(() => { suppressHandleClick = false; }, 0);
+    const expand = v > 0.3 ? true : v < -0.3 ? false : h > full / 2;
+    sheetBody.style.transition = '';
+    sheetBody.style.gridTemplateRows = (expand ? full : 0) + 'px';
+    sheetBody.style.opacity = expand ? 1 : 0;
+    setSheetExpanded(expand);
+    // 吸附动画结束后交还给 CSS 类控制（用定时器而非 transitionend，避免事件丢失时卡住）
+    clearTimeout(sheetSnapTimer);
+    sheetSnapTimer = setTimeout(() => { if (!sheetDrag) clearSheetInlineStyle(); }, 450);
+  }
+  sheetHandle.addEventListener('pointerup', endSheetDrag);
+  sheetHandle.addEventListener('pointercancel', endSheetDrag);
+
+  // 分类区域折叠（桌面端常用），记住用户选择
+  const categoryToggle = document.getElementById('category-toggle');
+  function setCategoriesCollapsed(collapsed) {
+    appCard.classList.toggle('categories-collapsed', collapsed);
+    categoryToggle.setAttribute('aria-expanded', String(!collapsed));
+  }
+  try { setCategoriesCollapsed(localStorage.getItem('categories_collapsed') === 'true'); } catch (e) {}
+  categoryToggle.addEventListener('click', () => {
+    const collapsed = !appCard.classList.contains('categories-collapsed');
+    setCategoriesCollapsed(collapsed);
+    try { localStorage.setItem('categories_collapsed', String(collapsed)); } catch (e) {}
   });
   
   // 处理接受按钮
@@ -1517,6 +1719,21 @@
     zoom: initialState.zoom
   });
   
+  // 地图控件：缩放与指南针
+  document.getElementById('zoom-in').addEventListener('click', () => map.zoomIn());
+  document.getElementById('zoom-out').addEventListener('click', () => map.zoomOut());
+  const compassButton = document.getElementById('compass-button');
+  const compassNeedle = document.getElementById('compass-needle');
+  function updateCompass() {
+    const bearing = map.getBearing();
+    compassNeedle.style.transform = `rotate(${-45 - bearing}deg)`; // fa-compass 指针默认朝东北
+    compassButton.classList.toggle('show', Math.abs(bearing) > 0.5 || map.getPitch() > 0.5);
+  }
+  map.on('rotate', updateCompass);
+  map.on('pitch', updateCompass);
+  map.on('load', updateCompass);
+  compassButton.addEventListener('click', () => map.easeTo({ bearing: 0, pitch: 0 }));
+
   // 监听地图样式加载完成（MapLibre事件）
   map.on('styledata', function() {
     console.log('Map styledata event fired');
@@ -1955,6 +2172,19 @@
     }
   };
   
+  // 分类图标（Font Awesome 名称）
+  const categoryIcons = {
+    buildings: 'building',
+    dining: 'utensils',
+    shop: 'bag-shopping',
+    office: 'briefcase',
+    facilities: 'screwdriver-wrench',
+    healthcare: 'heart-pulse',
+    tourism: 'camera',
+    leisure: 'person-running',
+    default: 'location-dot'
+  };
+
   // 动态生成分类选项
   function generateCategoryItems() {
     const categoryList = document.getElementById('category-list');
@@ -1970,6 +2200,7 @@
       // 色块：使用分组内第一个分类的颜色
       const swatch = document.createElement('span');
       swatch.className = 'category-swatch';
+      swatch.innerHTML = faIcon(categoryIcons[groupKey] || categoryIcons.default);
       categoryItem.style.setProperty('--swatch', categoryColors[group.categories[0]].color);
 
       // 标签：英文 + 次要中文
@@ -2215,7 +2446,7 @@
         // 添加分享和评论按钮
         popupContent += `
           <div class="popup-actions">
-            <button class="btn" onclick="
+            <button class="btn icon-only" aria-label="Share / 分享" title="Share / 分享" onclick="
               const url = window.location.origin + window.location.pathname + '#map=' + ${map.getZoom().toFixed(2)} + '/' + ${lat.toFixed(6)} + '/' + ${lon.toFixed(6)} + '&poi=${poiId}';
               if (typeof gtag !== 'undefined') {
                 gtag('event', 'share', {
@@ -2231,10 +2462,10 @@
                 prompt('Copy this link / 复制此链接:', url);
               });
             ">
-              ${ICONS.link} Share <span class="zh">分享</span>
+              ${ICONS.share}
             </button>
-            <button class="btn" onclick="openCommentModal('${poiId}', '${displayName.replace('<br>', ' ').replace(/'/g, "\\'").replace(/`/g, '\\`')}', '${categoryInfo.color}')">
-              ${ICONS.comment} Comment <span class="zh">评论 <span class="waline-comment-count" data-path="/poi/${poiId}" id="waline-count-${poiId}">…</span></span>
+            <button class="btn icon-only" aria-label="Comment / 评论" title="Comment / 评论" onclick="openCommentModal('${poiId}', '${displayName.replace('<br>', ' ').replace(/'/g, "\\'").replace(/`/g, '\\`')}', '${categoryInfo.color}')">
+              ${ICONS.comment}<span class="count-badge waline-comment-count" data-path="/poi/${poiId}" id="waline-count-${poiId}"></span>
             </button>
           </div>
         `;
