@@ -2310,7 +2310,9 @@
   // 密集区域（如食堂）会一直显示数量，提示用户放大查看，而不是被碰撞检测悄悄隐藏
   const POI_CLUSTER_MAX_ZOOM = 18;
   const POI_MINOR_MINZOOM = 18;
-  const POI_LAYERS = ['poi-minor', 'poi-points', 'poi-selected'];
+  // 每个分组一个聚合源：只合并同类 POI
+  const POI_GROUPS = Object.keys(categoryGroups);
+  const POI_LAYERS = ['poi-minor', ...POI_GROUPS.map(g => `poi-points-${g}`), 'poi-selected'];
   let selectedPoi = null;
 
   // 双语名称：英文在上，中文较小在下；只有一种名称时只显示一行
@@ -2436,19 +2438,20 @@
     return Object.keys(groupStates).filter(g => groupStates[g]);
   }
 
-  // 聚合源只包含已选分类的 1、2 级 POI，保证气泡数量与可见内容一致
-  function clusterPoiData() {
-    const visible = visiblePoiGroups();
+  // 某分组的聚合数据：仅 1、2 级 POI；分组被隐藏时为空，保证气泡数量与可见内容一致
+  function clusterPoiData(group) {
     return {
       type: 'FeatureCollection',
-      features: poiFeatures.filter(f => f.properties.tier < 3 && visible.includes(f.properties.group))
+      features: groupStates[group]
+        ? poiFeatures.filter(f => f.properties.tier < 3 && f.properties.group === group)
+        : []
     };
   }
 
   function refreshPoiFilters() {
     if (!map.getLayer('poi-selected')) return;
     const notSelected = ['!=', ['get', 'index'], selectedPoi ?? -1];
-    map.setFilter('poi-points', ['all', ['!', ['has', 'point_count']], notSelected]);
+    POI_GROUPS.forEach(g => map.setFilter(`poi-points-${g}`, ['all', ['!', ['has', 'point_count']], notSelected]));
     map.setFilter('poi-minor', ['all',
       ['==', ['get', 'tier'], 3],
       ['in', ['get', 'group'], ['literal', visiblePoiGroups()]],
@@ -2459,8 +2462,10 @@
 
   // 分类筛选变化时同时更新聚合数据
   function refreshPoiData() {
-    const source = map.getSource('poi-cluster');
-    if (source) source.setData(clusterPoiData());
+    POI_GROUPS.forEach(g => {
+      const source = map.getSource(`poi-cluster-${g}`);
+      if (source) source.setData(clusterPoiData(g));
+    });
     refreshPoiFilters();
   }
 
@@ -2476,17 +2481,6 @@
       pairs.push(group, categoryColors[categoryGroups[group].categories[0]].color);
     });
     return ['match', ['get', 'group'], ...pairs, '#6B7280'];
-  }
-
-  // 气泡颜色：取聚合内数量最多的分组
-  function dominantGroupExpr() {
-    const groups = Object.keys(categoryGroups);
-    const expr = ['case'];
-    groups.forEach(g => {
-      expr.push(['all', ...groups.filter(o => o !== g).map(o => ['>=', ['get', 'n_' + g], ['get', 'n_' + o]])], g);
-    });
-    expr.push('default');
-    return expr;
   }
 
   const POI_POINT_LAYOUT = {
@@ -2510,20 +2504,16 @@
       type: 'geojson',
       data: { type: 'FeatureCollection', features: poiFeatures }
     });
-    // 聚合源：统计每个分组的数量，用于决定气泡颜色
-    const clusterProperties = {};
-    Object.keys(categoryGroups).forEach(g => {
-      clusterProperties['n_' + g] = ['+', ['case', ['==', ['get', 'group'], g], 1, 0]];
-    });
-    map.addSource('poi-cluster', {
-      type: 'geojson',
-      data: clusterPoiData(),
-      // maxzoom 须大于 clusterMaxZoom，否则更高级别会沿用最后一级的聚合结果而无法展开
-      maxzoom: 20,
-      cluster: true,
-      clusterMaxZoom: POI_CLUSTER_MAX_ZOOM,
-      clusterRadius: 40,
-      clusterProperties
+    POI_GROUPS.forEach(g => {
+      map.addSource(`poi-cluster-${g}`, {
+        type: 'geojson',
+        data: clusterPoiData(g),
+        // maxzoom 须大于 clusterMaxZoom，否则更高级别会沿用最后一级的聚合结果而无法展开
+        maxzoom: 20,
+        cluster: true,
+        clusterMaxZoom: POI_CLUSTER_MAX_ZOOM,
+        clusterRadius: 40
+      });
     });
 
     const textPaint = {
@@ -2543,52 +2533,58 @@
       paint: textPaint
     });
 
-    map.addLayer({
-      id: 'poi-points',
-      type: 'symbol',
-      source: 'poi-cluster',
-      filter: ['!', ['has', 'point_count']],
-      // 图标始终显示（密集处已由聚合处理），仅名称在拥挤时隐藏
-      layout: { ...POI_POINT_LAYOUT, 'symbol-sort-key': ['get', 'tier'], 'icon-allow-overlap': true },
-      paint: textPaint
+    // 单个 POI：图标始终显示（密集处已由聚合处理），仅名称在拥挤时隐藏
+    POI_GROUPS.forEach(g => {
+      map.addLayer({
+        id: `poi-points-${g}`,
+        type: 'symbol',
+        source: `poi-cluster-${g}`,
+        filter: ['!', ['has', 'point_count']],
+        layout: { ...POI_POINT_LAYOUT, 'symbol-sort-key': ['get', 'tier'], 'icon-allow-overlap': true },
+        paint: textPaint
+      });
     });
 
-    // 聚合气泡：数量越多气泡越大，始终显示
-    map.addLayer({
-      id: 'poi-clusters',
-      type: 'symbol',
-      source: 'poi-cluster',
-      filter: ['has', 'point_count'],
-      layout: {
-        'icon-image': ['concat', 'poi-cluster-', dominantGroupExpr()],
-        'icon-size': ['step', ['get', 'point_count'], 1, 10, 1.15, 25, 1.3],
-        'icon-allow-overlap': true,
-        'text-field': ['get', 'point_count_abbreviated'],
-        'text-font': ['MiSans Semibold'],
-        'text-size': ['step', ['get', 'point_count'], 12, 10, 13, 25, 14],
-        'text-allow-overlap': true
-      },
-      paint: { 'text-color': '#ffffff' }
-    });
+    // 聚合气泡（同类合并）：分组颜色 + 数量，数量越多气泡越大，始终显示
+    POI_GROUPS.forEach(g => {
+      const layerId = `poi-clusters-${g}`;
+      map.addLayer({
+        id: layerId,
+        type: 'symbol',
+        source: `poi-cluster-${g}`,
+        filter: ['has', 'point_count'],
+        layout: {
+          'icon-image': `poi-cluster-${g}`,
+          'icon-size': ['step', ['get', 'point_count'], 1, 10, 1.15, 25, 1.3],
+          'icon-allow-overlap': true,
+          'text-field': ['get', 'point_count_abbreviated'],
+          'text-font': ['MiSans Semibold'],
+          'text-size': ['step', ['get', 'point_count'], 12, 10, 13, 25, 14],
+          'text-allow-overlap': true
+        },
+        paint: { 'text-color': '#ffffff' }
+      });
 
-    // 点击气泡：放大到其展开的级别
-    map.on('click', 'poi-clusters', e => {
-      e.originalEvent._poiHandled = true;
-      const feature = e.features[0];
-      const source = map.getSource('poi-cluster');
-      const zoomTo = zoom => map.easeTo({
-        center: feature.geometry.coordinates,
-        zoom: Math.max(zoom, map.getZoom() + 1),
-        duration: 500
+      // 点击气泡：放大到其展开的级别
+      map.on('click', layerId, e => {
+        if (e.originalEvent._poiHandled) return;
+        e.originalEvent._poiHandled = true;
+        const feature = e.features[0];
+        const source = map.getSource(`poi-cluster-${g}`);
+        const zoomTo = zoom => map.easeTo({
+          center: feature.geometry.coordinates,
+          zoom: Math.max(zoom, map.getZoom() + 1),
+          duration: 500
+        });
+        // 兼容回调（v3）与 Promise（v4+）两种 API
+        const result = source.getClusterExpansionZoom(feature.properties.cluster_id, (err, zoom) => {
+          if (!err) zoomTo(zoom);
+        });
+        if (result && typeof result.then === 'function') result.then(zoomTo).catch(() => {});
       });
-      // 兼容回调（v3）与 Promise（v4+）两种 API
-      const result = source.getClusterExpansionZoom(feature.properties.cluster_id, (err, zoom) => {
-        if (!err) zoomTo(zoom);
-      });
-      if (result && typeof result.then === 'function') result.then(zoomTo).catch(() => {});
+      map.on('mouseenter', layerId, () => { map.getCanvas().style.cursor = 'pointer'; });
+      map.on('mouseleave', layerId, () => { map.getCanvas().style.cursor = ''; });
     });
-    map.on('mouseenter', 'poi-clusters', () => { map.getCanvas().style.cursor = 'pointer'; });
-    map.on('mouseleave', 'poi-clusters', () => { map.getCanvas().style.cursor = ''; });
 
     // 选中的 POI：大头针 + 名称，始终显示
     map.addLayer({
